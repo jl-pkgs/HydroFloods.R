@@ -1,5 +1,5 @@
 source("scripts/main_vis.R")
-load("res.rda")
+load("res_V2.rda")
 
 
 d_lab <- build_lab(res)

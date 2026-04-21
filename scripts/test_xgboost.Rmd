@@ -5,7 +5,7 @@ pacman::p_load(
   ggplot2, gg.layers
 )
 devtools::load_all(".")
-devtools::load_all("Z:/GitHub/cug-hydro/kfold.R")
+# devtools::load_all("Z:/GitHub/cug-hydro/kfold.R")
 options(datatable.print.nrow = 20)
 
 sites = c("松柏（二）", "县河", "房县", "延坝", "孤山")
@@ -66,9 +66,6 @@ info_pass
 ```
 
 ## debug
-```{r}
-
-```
 
 > 统计每个结果
 ```{r}
@@ -83,11 +80,6 @@ write_fig(p, 'd:/Rplot.pdf', 10, 5)
 ```
 
 ## 检验洪水合格率
-
-```{r}
-```
-
-
 
 ```{r}
 dtrain <- xgb.DMatrix(data = as.matrix(X), label = as.matrix(Y))

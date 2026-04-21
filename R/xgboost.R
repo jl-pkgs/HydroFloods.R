@@ -1,6 +1,15 @@
-#' @import xgboost
-NULL
+#' add_previous
+#' @param d with the variable of `Q_obs`
+#' @export
+add_previous <- function(d, nlead = 12) {
+  Qs <- previous_tn(d$Q_obs, nlead)[, -1] %>%
+    as.data.table() %>%
+    rename_with(\(x) paste0("Q_", x))
+  cbind(d, Qs)
+}
 
+#' @import xgboost
+#' @export
 train_xgboost <- function(d_full, leads = 1:12, ...) {
   model <- function(X, Y, ...) {
     kfold_xgboost(X, Y,
@@ -9,48 +18,52 @@ train_xgboost <- function(d_full, leads = 1:12, ...) {
     )
   }
 
-  vars_Q <- names(d_full) %>% .[grep("Q_t-", .)]
-  d <- d_full[!is.na(Q_obs), ]
-  Y <- select(d, Q_obs)
+  input <- d_full %>% add_previous()
+  data <- input[!is.na(Q_obs), ]
+  vars_Q <- names(input) %>% .[grep("Q_t-", .)]
+
+  Y <- select(data, Q_obs)
   leads <- leads %>% set_names(., .)
 
-  X <- select(d, P, PET = PET_Romanenko, Q_sim)
-  r_HydroMetXGB <- model(X, Y, ...)
+  X <- select(data, P, PET = PET_Romanenko, Q_sim)
+  r_HydroMetXGB <- model(X, Y)
 
   res_HydroMetQlagXGB <- foreach(lead = leads, i = icount()) %do% {
     runningId(i)
-    X <- select(d, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[lead]))
-    r <- model(X, Y, ...)
+    X <- select(data, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[lead]))
+    r <- model(X, Y)
   }
-  list(data = d, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
+  list(data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
 }
 
 
 ## 检验洪水的合格率
-cal_pass_rate <- function(res, d_full) {
-  d <- res$data # d <- d_full[!is.na(Q_obs), ]
+#' @export
+cal_pass_rate <- function(res_xgb, d_full) {
+  input <- res_xgb$data # d <- d_full[!is.na(Q_obs), ]
 
   ## flood_events 信息
-  c(data, info_flood) %<-% flood_divide(d_full, SITE)
-  d_flood <- data[, .(group, group_name, site, time, Q_obs)]
+  c(data_flood, info_flood) %<-% flood_divide(d_full, SITE)
+  d_flood <- data_flood[, .(group, group_name, site, time, Q_obs)]
+  n_flood <- d_flood$group_name %>% unique_length()
 
-  d_Hydro <- get_pred_Hydro(data)
-  d_HydroMetXGB <- get_pred_HydroMetXGB(res$HydroMetXGB, d)
-  d_HydroMetQlagXGB <- get_pred_HydroMetQlagXGB(res$HydroMetQlagXGB, d)
+  d_Hydro <- get_pred_Hydro(data_flood)
+  d_HydroMetXGB <- get_pred_HydroMetXGB(res_xgb$HydroMetXGB, input)
+  d_HydroMetQlagXGB <- get_pred_HydroMetQlagXGB(res_xgb$HydroMetQlagXGB, input)
 
   lst <- list(Hydro = d_Hydro, HydroMetXGB = d_HydroMetXGB, HydroMetQlagXGB = d_HydroMetQlagXGB) %>%
     map(\(x) merge(d_flood, x, by = "time"))
 
-  n_flood <- d_flood$group_name %>% unique_length()
-  info_pass <- map(lst, function(dat){
+  info_pass <- map(lst, function(dat) {
     info <- dat[, eval_Qmax(Q_obs, Q_sim), .(group, group_name, lead)]
     info[passed == TRUE, .(perc_pass = .N / n_flood), .(lead)]
-  }) %>% melt_list("model") %>% arrange(model, lead)
+  }) %>%
+    melt_list("model") %>% arrange(model, lead)
 
   gof <- list(
-    Hydro = data[, GOF(Q_obs, Q_sim)], 
-    HydroMetXGB = res$HydroMetXGB$gof[kfold == "all", ],
-    HydroMetQlagXGB = tidy_gof(res$HydroMetQlagXGB) %>% melt_list("lead")
+    Hydro = input[, GOF(Q_obs, Q_sim)],
+    HydroMetXGB = res_xgb$HydroMetXGB$gof[kfold == "all", ],
+    HydroMetQlagXGB = tidy_gof(res_xgb$HydroMetQlagXGB) %>% melt_list("lead")
   )
   listk(info_pass, info_flood, gof)
 }
