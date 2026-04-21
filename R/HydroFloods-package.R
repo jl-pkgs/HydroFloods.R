@@ -1,0 +1,47 @@
+#' @keywords internal
+#' @import glue
+#' @importFrom dplyr mutate group_map group_by
+#' @importFrom purrr map
+#' @importFrom lubridate ymd_hms dhours
+#' @importFrom Ipaper %!in% write_fig
+#' @import data.table magrittr zeallot
+#' @import gg.layers
+#' @importFrom dplyr arrange relocate mutate group_by group_map
+"_PACKAGE"
+
+## usethis namespace: start
+## usethis namespace: end
+NULL
+
+
+listk <- function(...) {
+  cols <- as.list(substitute(list(...)))[-1]
+  vars <- names(cols)
+  Id_noname <- if (is.null(vars)) {
+    seq_along(cols)
+  } else {
+    which(vars == "")
+  }
+  if (length(Id_noname) > 0) {
+    vars[Id_noname] <- sapply(cols[Id_noname], deparse)
+  }
+  x <- setNames(list(...), vars)
+  return(x)
+}
+
+#' @export
+Q2R <- function(Q, area = dt * 3.6, dt = 1) {
+  Q * dt * 3.6 / area
+}
+
+#' @export 
+R2Q <- function(R, area = dt * 3.6, dt = 1) {
+  (R * area) / (dt * 3.6)
+}
+
+movsum <- function(x, win_p = 24) {
+  rollapply(x,
+    width = win_p, FUN = \(x) sum(x, na.rm = TRUE),
+    fill = NA, align = "right", partial = TRUE
+  )
+}
