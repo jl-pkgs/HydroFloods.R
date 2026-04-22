@@ -47,18 +47,16 @@ cal_pass_rate <- function(res_xgb, d_full) {
   d_flood <- data_flood[, .(group, group_name, site, time, Q_obs)]
   n_flood <- d_flood$group_name %>% unique_length()
 
-  d_Hydro <- get_pred_Hydro(data_flood)
-  d_HydroMetXGB <- get_pred_HydroMetXGB(res_xgb$HydroMetXGB, input)
-  d_HydroMetQlagXGB <- get_pred_HydroMetQlagXGB(res_xgb$HydroMetQlagXGB, input)
-
-  lst <- list(Hydro = d_Hydro, HydroMetXGB = d_HydroMetXGB, HydroMetQlagXGB = d_HydroMetQlagXGB) %>%
-    map(\(x) merge(d_flood, x, by = "time"))
+  lst <- list(
+    Hydro = get_pred_Hydro(data_flood),
+    HydroMetXGB = get_pred_HydroMetXGB(res_xgb$HydroMetXGB, input),
+    HydroMetQlagXGB = get_pred_HydroMetQlagXGB(res_xgb$HydroMetQlagXGB, input)
+  ) %>% map(\(x) merge(d_flood, x, by = "time"))
 
   info_pass <- map(lst, function(dat) {
     info <- dat[, eval_Qmax(Q_obs, Q_sim), .(group, group_name, lead)]
     info[passed == TRUE, .(perc_pass = .N / n_flood), .(lead)]
-  }) %>%
-    melt_list("model") %>% arrange(model, lead)
+  }) %>% melt_list("model") %>% arrange(model, lead)
 
   gof <- list(
     Hydro = input[, GOF(Q_obs, Q_sim)],

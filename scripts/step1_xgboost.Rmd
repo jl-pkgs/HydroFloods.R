@@ -31,11 +31,11 @@ res <- foreach(SITE = sites, i = icount()) %do% {
   fprintf("[%d] %s \n", i, SITE)
 
   d_full <- df[site == SITE, ] #%>% add_previous()
-  res_xgb <- train_xgboost(d_full)
-  info <- cal_pass_rate(res_xgb, d_full) # 合格率并未提升太多
+  xgb <- train_xgboost(d_full)
+  info <- cal_pass_rate(xgb, d_full) # 合格率并未提升太多
   # c(info_pass, info_flood, gof) %<-% info
-  info
+  listk(xgb, info)
 }
 
-save(res, file = "res_V2.rda")
+save(res, file = "./OUTPUT/res_ModernHydro.rda")
 ```

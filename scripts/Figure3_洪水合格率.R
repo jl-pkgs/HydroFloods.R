@@ -1,6 +1,6 @@
 source("scripts/main_vis.R")
-load("res_V2.rda")
-
+load("./OUTPUT/res_ModernHydro.rda")
+res = map(res, "info")
 
 d_lab <- build_lab(res)
 dat_pass <- map(res, "info_pass") %>% melt_list("site")

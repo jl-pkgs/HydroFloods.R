@@ -1,5 +1,7 @@
-*.rda
 backup
-# *.svg
 .vscode
+
+*.rda
+
+*.svg
 *debug*

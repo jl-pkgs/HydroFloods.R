@@ -1,5 +1,6 @@
 source("scripts/main_vis.R")
-load("res_V2.rda")
+load("./OUTPUT/res_ModernHydro.rda")
+res <- map(res, "info")
 
 gof_HydroMetQlagXGB <- map(res, \(x) x$gof$HydroMetQlagXGB) %>% melt_list("site") %>% 
   mutate(
