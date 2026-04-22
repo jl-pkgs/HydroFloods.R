@@ -3,5 +3,7 @@ backup
 
 *.rda
 
+*.pdf
 *.svg
+
 *debug*

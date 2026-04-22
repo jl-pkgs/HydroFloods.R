@@ -28,11 +28,11 @@ train_xgboost <- function(d_full, leads = 1:12, ...) {
   X <- select(data, P, PET = PET_Romanenko, Q_sim)
   r_HydroMetXGB <- model(X, Y)
 
-  res_HydroMetQlagXGB <- foreach(lead = leads, i = icount()) %do% {
-    runningId(i)
+  res_HydroMetQlagXGB <- map(leads, function(lead) {
+    runningId(lead)
     X <- select(data, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[lead]))
     r <- model(X, Y)
-  }
+  })
   list(data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
 }
 

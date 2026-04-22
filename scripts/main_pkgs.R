@@ -8,5 +8,3 @@ pacman::p_load(
 devtools::load_all(".")
 # devtools::load_all(path.mnt("/mnt/z/GitHub/cug-hydro/kfold.R"))
 options(datatable.print.nrow = 20)
-
-dir_root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()

@@ -98,13 +98,7 @@ rm_bad_groups <- \(d, groups_bad) d[group_name %!in% groups_bad, ]
 #' @param d A data.table with the variables of `time`, `Q_obs`
 #' @export
 flood_divide <- function(d, SITE, extend = 3, fout = NULL, show = FALSE) {
-  f_config = path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
-  config_all <- yaml::read_yaml(f_config)
-  config <- if (is.null(config_all[[SITE]])) config_all$default else config_all[[SITE]]
-  if (is.null(config)) {
-    config <- list(Q_min = 15, Q_peak = 100, q.max = 250, prcp.max = 50)
-  }
-  c(Q_min, Q_peak, q.max, prcp.max) %<-% config
+  c(Q_min, Q_peak, q.max, prcp.max) %<-% get_config(SITE)
 
   ## 划分洪水场次
   extend <- c(1, 1) * dhours(extend) # `extend`定义洪水前后延时
@@ -117,8 +111,18 @@ flood_divide <- function(d, SITE, extend = 3, fout = NULL, show = FALSE) {
   ## 绘图
   nrow <- ceiling(nrow(r$info_flood) / 4)
   if (!is.null(fout)) {
-    p <- plot_FloodEvents_Qobs(data, info_flood, prcp.max, q.max) # 观测洪水过程  可共用
+    p <- plot_FloodEvents_Qobs(r$data, r$info_flood, prcp.max, q.max) # 观测洪水过程  可共用
     write_fig(p, fout, 12, 2.5 * nrow, show = show)
   }
   return(r)
+}
+
+get_config <- function(SITE) {
+  f_config = path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
+  config_all <- yaml::read_yaml(f_config)
+  config <- if (is.null(config_all[[SITE]])) config_all$default else config_all[[SITE]]
+  if (is.null(config)) {
+    config <- list(Q_min = 15, Q_peak = 100, q.max = 250, prcp.max = 50)
+  }
+  config
 }

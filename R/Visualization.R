@@ -2,7 +2,7 @@ Floods_Visualization <- function(
   fout,
   outdir = "Project_Shiyan2025/OUTPUT/version2_洪水摘录表",
   prefix = "Figure", subfix = "",
-  SITE = "", config_all = NULL,
+  SITE = "", 
   show_floods = TRUE, show = TRUE, extend = 3
 )
 {
@@ -15,11 +15,12 @@ Floods_Visualization <- function(
     mutate(year = year(time))
 
   ## 加载设置
-  c(data, info_flood) %<-% flood_divide(d, config_all, SITE, extend = extend, 
+  c(data, info_flood) %<-% flood_divide(d, SITE, extend = extend, 
     fout = f_flood_obs, show = show)
   print(info_flood)
   nrow <- ceiling(nrow(info_flood) / 4)
 
+  c(Q_min, Q_peak, q.max, prcp.max) %<-% get_config(SITE)
   p <- plot_FloodEvents_Qsim(data, prcp.max, q.max)
   write_fig(p, f_flood_sim, 12, 2.5 * nrow, show = show)
 

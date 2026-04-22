@@ -10,32 +10,41 @@ read_output <- function(indir) {
 }
 
 sites <- c("松柏（二）", "县河", "房县", "延坝", "孤山")
-SITE <- sites[5]
-```
 
-```{r}
-f_forcing <- glue("{dir_root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
-forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair) # 仅使用气象数据
-
+root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()
 # indir = glue("{dir_root}/Project_Shiyan2025/OUTPUT/version1_千里眼/")
-indir <- glue("{dir_root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
-df <- read_output(indir) %>% merge(forcing) # [site, time, P, Q_obs, Q_sim, PET_FAO98, PET_PT1972, PET_Romanenko]
-```
+dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
+models <- dir(dir_root)
 
-## xgboost实战
-```{r}
-devtools::load_all()
-sites <- c("松柏（二）", "县河", "房县", "延坝", "孤山") %>% set_names(., .)
+run_xgb <- function(model, overwrite=FALSE) {
+  fout <- glue("./OUTPUT/res_{model}.rda")
+  (isfile(fout) && !overwrite) && return()
 
-res <- foreach(SITE = sites, i = icount()) %do% {
-  fprintf("[%d] %s \n", i, SITE)
+  indir = glue("{dir_root}/{model}")
+  df <- read_output(indir) %>% merge(forcing) # [site, time, P, Q_obs, Q_sim, PET_FAO98, PET_PT1972, PET_Romanenko]
 
-  d_full <- df[site == SITE, ] #%>% add_previous()
-  xgb <- train_xgboost(d_full)
-  info <- cal_pass_rate(xgb, d_full) # 合格率并未提升太多
-  # c(info_pass, info_flood, gof) %<-% info
-  listk(xgb, info)
+  print(model)
+  res <- map(seq_along(sites), function(i) {
+    SITE = sites[i]
+    fprintf("[%d] %s \n", i, SITE)
+
+    d_full <- df[site == SITE, ] # %>% add_previous()
+    xgb <- train_xgboost(d_full)
+    info <- cal_pass_rate(xgb, d_full) # 合格率并未提升太多
+    # c(info_pass, info_flood, gof) %<-% info
+    listk(xgb, info)
+  }) %>% set_names(sites)
+  save(res, file = fout)
 }
 
-save(res, file = "./OUTPUT/res_ModernHydro.rda")
+model = models[5]
+SITE <- sites[1]
+```
+
+```{r}
+f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
+forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair) # 仅使用气象数据
+
+run_xgb(models[5], overwrite = TRUE)
+# map(models, run_xgb)
 ```
