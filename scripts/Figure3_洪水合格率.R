@@ -60,6 +60,3 @@ Figure3 <- function(model, overwrite = FALSE) {
 
   write_fig(p, fout, 10, 5, show = FALSE)
 }
-
-model = models[5]
-map(models, \(model) Figure3(model, overwrite = TRUE))

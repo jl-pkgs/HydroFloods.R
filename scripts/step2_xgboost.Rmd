@@ -45,6 +45,6 @@ SITE <- sites[1]
 f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
 forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair) # 仅使用气象数据
 
-run_xgb(models[5], overwrite = TRUE)
-# map(models, run_xgb)
+# run_xgb(models[5], overwrite = TRUE)
+map(models, run_xgb, overwrite = TRUE)
 ```
