@@ -38,19 +38,22 @@ train_xgboost <- function(d_full, leads = 1:12, ...) {
 
 
 ## 检验洪水的合格率
+#' @description 
+#' - `data_flood`: 只保留了洪水场次的数据
+#' - `data`      : 包含了甲方提供的所有洪水场次表
 #' @export
-cal_pass_rate <- function(res_xgb, d_full) {
-  input <- res_xgb$data # d <- d_full[!is.na(Q_obs), ]
+cal_pass_rate <- function(xgb, d_full) {
+  data <- xgb$data # d <- d_full[!is.na(Q_obs), ]
 
   ## flood_events 信息
   c(data_flood, info_flood) %<-% flood_divide(d_full, SITE)
-  d_flood <- data_flood[, .(group, group_name, site, time, Q_obs)]
+  d_flood <- data_flood[, .(group, group_name, site, time, Q_obs)] 
   n_flood <- d_flood$group_name %>% unique_length()
 
   lst <- list(
-    Hydro = get_pred_Hydro(data_flood),
-    HydroMetXGB = get_pred_HydroMetXGB(res_xgb$HydroMetXGB, input),
-    HydroMetQlagXGB = get_pred_HydroMetQlagXGB(res_xgb$HydroMetQlagXGB, input)
+    Hydro = get_pred_Hydro(data),
+    HydroMetXGB = get_pred_HydroMetXGB(xgb$HydroMetXGB, data),
+    HydroMetQlagXGB = get_pred_HydroMetQlagXGB(xgb$HydroMetQlagXGB, data)
   ) %>% map(\(x) merge(d_flood, x, by = "time"))
 
   info_pass <- map(lst, function(dat) {
@@ -59,15 +62,24 @@ cal_pass_rate <- function(res_xgb, d_full) {
   }) %>% melt_list("model") %>% arrange(model, lead)
 
   gof <- list(
-    Hydro = input[, GOF(Q_obs, Q_sim)],
-    HydroMetXGB = res_xgb$HydroMetXGB$gof[kfold == "all", ],
-    HydroMetQlagXGB = tidy_gof(res_xgb$HydroMetQlagXGB) %>% melt_list("lead")
+    Hydro = data[, GOF(Q_obs, Q_sim)],
+    HydroMetXGB = xgb$HydroMetXGB$gof[kfold == "all", ],
+    HydroMetQlagXGB = tidy_gof(xgb$HydroMetQlagXGB) %>% melt_list("lead")
   )
   listk(info_pass, info_flood, gof)
 }
 
 tidy_gof <- \(lst) map(lst, \(l) l$gof[kfold == "all", ])
 
+
+get_pred <- function(xgb) {
+  data <- xgb$data
+  list(
+    Hydro = get_pred_Hydro(data),
+    HydroMetXGB = get_pred_HydroMetXGB(xgb$HydroMetXGB, data),
+    HydroMetQlagXGB = get_pred_HydroMetQlagXGB(xgb$HydroMetQlagXGB, data)
+  )
+}
 
 get_pred_HydroMetQlagXGB <- function(res, d) {
   dat <- map(res, "ypred") %>%
