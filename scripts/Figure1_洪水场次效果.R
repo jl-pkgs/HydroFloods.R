@@ -4,7 +4,7 @@
 source("scripts/main_pkgs.R")
 models <- c("m05_ihacres_7p_1s", "m07_gr4j_4p_2s", "m09_susannah1_6p_2s", "m28_xinanjiang_12p_4s", "XAJ")
 
-Figure1_Qsim <- function(res, model, SITE, LEAD = "lead_03", outdir="./Figures") {
+Figure1_Qsim_1site <- function(res, model, SITE, LEAD = "lead_03", outdir="./Figures") {
   l = res[[SITE]]
   fout = glue("{outdir}/Figure1_Qsims_{SITE}_{model}_{LEAD}.svg")
 
@@ -19,8 +19,7 @@ Figure1_Qsim <- function(res, model, SITE, LEAD = "lead_03", outdir="./Figures")
     Hydro = pred$Hydro[, .(time, Q_sim)],
     HydroMetXGB = pred$HydroMetXGB[, .(time, Q_sim)],
     HydroMetQlagXGB = pred$HydroMetQlagXGB[lead == LEAD, .(time, Q_sim)]
-  ), "model") %>%
-    merge(dat_obs) %>%
+  ), "model") %>% merge(dat_obs) %>%
     mutate(model = factor(model, c("Hydro", "HydroMetXGB", "HydroMetQlagXGB")))
 
   c(Q_min, Q_peak, q.max, prcp.max) %<-% get_config(SITE)
@@ -30,20 +29,12 @@ Figure1_Qsim <- function(res, model, SITE, LEAD = "lead_03", outdir="./Figures")
   write_fig(p, fout, 12, 2.5 * nrow, show = FALSE)
 }
 
-Figure1_Qsim_sites <- function(RES, model, ...) {
+Figure1_Qsim_1model <- function(model, ...) {
+  load(glue("./OUTPUT/res_{model}.rda")) # res
   foreach(SITE = sites, i = icount()) %do% {
-    Figure1_Qsim(res, model, SITE, ...)
+    Figure1_Qsim_1site(res, model, SITE, ...)
   }
 }
 
-Figure1_Qsim_models <- function(...) {
-  map(seq_along(models), \(i) {
-    model = models[i]
-    load(glue("./OUTPUT/res_{model}.rda"))
-    Figure1_Qsim_sites(res, model, ...)
-  })
-  invisible()
-}
-
 # InitCluster(6)
-Figure1_Qsim_models()
+
