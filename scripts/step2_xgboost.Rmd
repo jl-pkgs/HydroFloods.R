@@ -11,8 +11,8 @@ read_output <- function(indir) {
 }
 
 sites <- c("松柏（二）", "县河", "房县", "延坝", "孤山")
-
 root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()
+
 # indir = glue("{dir_root}/Project_Shiyan2025/OUTPUT/version1_千里眼/")
 dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
 
@@ -28,11 +28,11 @@ run_xgb <- function(model, overwrite=FALSE) {
     SITE = sites[i]
     fprintf("[%d] %s \n", i, SITE)
 
-    d_full <- df[site == SITE, ] # %>% add_previous()
-    xgb <- train_xgboost(d_full)
-    info <- cal_pass_rate(xgb, d_full) # 合格率并未提升太多
+    data_full <- df[site == SITE, ] # %>% add_previous()
+    xgb <- train_xgboost(data_full)
+    info <- cal_pass_rate(xgb) # 合格率并未提升太多
     # c(info_pass, info_flood, gof) %<-% info
-    listk(d_full, xgb, info)
+    listk(data_full, xgb, info)
   }) %>% set_names(sites)
   save(res, file = fout)
 }

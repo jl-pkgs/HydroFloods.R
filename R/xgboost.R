@@ -10,7 +10,7 @@ add_previous <- function(d, nlead = 12) {
 
 #' @import xgboost
 #' @export
-train_xgboost <- function(d_full, leads = 1:12, ...) {
+train_xgboost <- function(data_full, leads = 1:12, ...) {
   model <- function(X, Y, ...) {
     kfold_xgboost(X, Y,
       nrounds = 200, early_stopping_rounds = 20, # learning_rate = 0.1,
@@ -18,7 +18,7 @@ train_xgboost <- function(d_full, leads = 1:12, ...) {
     )
   }
 
-  input <- d_full %>% add_previous()
+  input <- data_full %>% add_previous()
   data <- input[!is.na(Q_obs), ]
   vars_Q <- names(input) %>% .[grep("Q_t-", .)]
 
@@ -33,17 +33,19 @@ train_xgboost <- function(d_full, leads = 1:12, ...) {
     X <- select(data, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[lead]))
     r <- model(X, Y)
   })
-  list(data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
+  listk(data_full, data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
 }
 
-
 ## 检验洪水的合格率
+#' cal_pass_rate
 #' @description 
 #' - `data_flood`: 只保留了洪水场次的数据
 #' - `data`      : 包含了甲方提供的所有洪水场次表
 #' @export
-cal_pass_rate <- function(xgb, d_full) {
+cal_pass_rate <- function(xgb) {
+  d_full <- xgb$data_full
   data <- xgb$data # d <- d_full[!is.na(Q_obs), ]
+  SITE <- data$site[1]
 
   ## flood_events 信息
   c(data_flood, info_flood) %<-% flood_divide(d_full, SITE)

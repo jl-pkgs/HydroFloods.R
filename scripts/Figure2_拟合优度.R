@@ -1,7 +1,7 @@
 source("scripts/main_vis.R")
 
 Figure2 <- function(model, overwrite = FALSE) {
-  fout = glue("Figures/Figure2_NSE_{model}.svg")
+  fout <- glue("Figures/Figure2_NSE_{model}.svg")
   (isfile(fout) && !overwrite) && return()
 
   load(glue("./OUTPUT/res_{model}.rda"))
@@ -58,5 +58,8 @@ Figure2 <- function(model, overwrite = FALSE) {
     ) +
     labs(x = "Leading time (hours)", color = NULL, shape = NULL)
 
+  print(fout)
   write_fig(p, fout, 10, 5, show = FALSE)
 }
+
+# Figure2(models[1], overwrite = TRUE)

@@ -1,5 +1,6 @@
 backup
 .vscode
+.claude
 
 *.rda
 *.pdf

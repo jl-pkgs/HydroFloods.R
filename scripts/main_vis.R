@@ -22,9 +22,8 @@ my_theme <- theme_bw(base_size = 13) +
   )
 
 build_lab <- function(res) {
-  sites = c("松柏（二）", "县河", "房县", "延坝", "孤山")
   # sites <- c("松柏（二）", "县河", "房县", "延坝", "孤山")
-  n_flood <- map(res, "info_flood") %>% map(nrow)
+  n_flood <- map(res, "info_flood") %>% map(\(x) dim(x)[1L])
   d_flood <- data.table(site = factor(names(res), sort(sites)), n_flood = unlist(n_flood))
 
   d_lab <- d_flood[, .N, .(site)] %>%
@@ -35,5 +34,3 @@ build_lab <- function(res) {
   d_lab$label_mk = label_mk(d_lab$label) %>% unlist()
   d_lab
 }
-
-models = c("m05_ihacres_7p_1s", "m07_gr4j_4p_2s", "m09_susannah1_6p_2s", "m28_xinanjiang_12p_4s", "XAJ")

@@ -1,3 +1,4 @@
+source("scripts/main_pkgs.R")
 source("scripts/main_vis.R")
 
 
@@ -6,10 +7,10 @@ Figure3 <- function(model, overwrite = FALSE) {
   (isfile(fout) && !overwrite) && return()
 
   load(glue("./OUTPUT/res_{model}.rda"))
-  res <- map(res, "info") %>% set_names(sites)
+  lst_info <- map(res, \(l) cal_pass_rate(l$xgb))
 
-  d_lab <- build_lab(res)
-  dat_pass <- map(res, "info_pass") %>% melt_list("site")
+  d_lab <- build_lab(lst_info)
+  dat_pass <- map(lst_info, "info_pass") %>% melt_list("site")
 
   pdat <- dat_pass[lead != "-"] %>% mutate(
     x = as.integer(str_extract(as.character(lead), "\\d{2}")),
@@ -58,5 +59,8 @@ Figure3 <- function(model, overwrite = FALSE) {
     ) +
     labs(x = "Leading time (hours)", y = "Percentage of Qualified (%)")
 
+  print(fout)
   write_fig(p, fout, 10, 5, show = FALSE)
 }
+
+# Figure3(models[1], overwrite = TRUE)
