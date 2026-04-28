@@ -20,7 +20,7 @@ detect_flood_events(
   format = "\%Y.\%m"
 )
 
-merge_flood2(df, info_flood)
+merge_flood2(df, info_flood, check.P = TRUE)
 
 merge_flood(df, info_flood)
 
