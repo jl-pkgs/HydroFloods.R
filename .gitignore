@@ -10,5 +10,6 @@ backup
 Manifest.toml
 
 *.csv
+*.rds
 *.jld2
 test

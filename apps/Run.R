@@ -17,8 +17,8 @@ f_fc_win <- sprintf("%s_window.csv", prefix)  # [in ] 输入数据，
 f_calib <- sprintf("%s_calib.csv", prefix)    # [in ] 率定数据
 f_out <- sprintf("%s_window_xgb.csv", prefix) # [out] 输出数据
 
-f_xgb <- "OUTPUT/res_XAJ.rda"
+f_xgb <- "OUTPUT/res_XAJ.rds"
 pred_xgb <- run_xgb_forecast(site, f_fc_win, f_xgb,
   f_calib = f_calib,
-  fout = f_out, nlead = nlead, force_calib = FALSE
+  fout = f_out, nlead = 24, force_calib = TRUE
 )

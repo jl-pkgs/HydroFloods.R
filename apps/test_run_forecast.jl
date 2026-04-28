@@ -63,7 +63,7 @@ if cfg["xgb_run"]
   f_calib = "$(dir_root)/$(site)_$(model)_calib.csv"     # [in ] 率定数据
   f_out = "$(dir_root)/$(site)_$(model)_window_xgb.csv"  # [out] 输出数据
 
-  f_xgb = "OUTPUT/res_XAJ.rda"
+  f_xgb = "OUTPUT/res_XAJ.rds"
   R"""
   pred_xgb <- run_xgb_forecast($site, $f_fc_win, $f_xgb, 
    f_calib = $f_calib,

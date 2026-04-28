@@ -12,82 +12,88 @@ check_input <- function(d) {
   arrange(d, site, time)
 }
 
-
 #' 用 XAJ calib 历史模拟结果重新率定 XGB 后处理模型
 #'
 #' 准备 XGBoost forecast 后处理模型
 #' force_calib = TRUE 表示用 XAJ calib 文件重新率定；FALSE 表示读取已有 res。
 #' @export
-calib_xgb_forecast <- function(
+calib_xgb <- function(
   site = NULL, f_xgb = NULL, f_calib = NULL,
   nlead = 12, force_calib = FALSE
 ) {
   if (!isfile(f_xgb) || force_calib) {
     dat <- fread(f_calib) %>% check_input()
     xgb <- train_xgboost(dat, leads = seq_len(nlead))
+    saveRDS(xgb, file = f_xgb)
   } else {
-    load(f_xgb)
-    xgb <- res[[site]]$xgb
+    xgb <- readRDS(f_xgb)
   }
   XGBQlag <- lapply(xgb$HydroMetQlagXGB, \(x) x$model)
   list(XGB = xgb$HydroMetXGB$model, XGBQlag = XGBQlag)
 }
 
-# 构造 forecast 段 XGB 输入
-#' @export
-make_xgb_forecast_input <- function(d, nlead = 12) {
-  d <- check_input(d)
-  t0 <- d[period == "analysis", time] %>% max()
-  
-  q0 <- d[period == "analysis" & time <= t0 & !is.na(Q_obs)][.N, Q_obs]
-  # TODO: check
-  x <- d[period == "forecast" & time > t0][1:nlead, .(site, time, P, PET, Q_sim)]
-  x[, `:=`(lead = sprintf("lead_%02d", seq_len(.N)), Qlag = q0)]
-  x
-}
-
-# 一组 kfold XGB 模型预测
-#' @export
-predict_xgb_folds <- function(models, x, vars) {
-  X <- as.matrix(x[, ..vars])
-  storage.mode(X) <- "double"
-  colnames(X) <- NULL
-  as.numeric(sapply(models, \(m) predict(m, X, validate_features = FALSE)))
-}
-
 # forecast 段逐时刻后处理
 #' @export
-predict_xgb_forecast <- function(models, xnew) {
-  rbindlist(lapply(seq_len(nrow(xnew)), function(i) {
-    x <- xnew[i]
-    p1 <- predict_xgb_folds(models$XGB, x, c("P", "PET", "Q_sim"))
-    p2 <- predict_xgb_folds(models$XGBQlag[[x$lead]], x, c("P", "PET", "Q_sim", "Qlag"))
+predict_xgb <- function(models, df_new) {
+  # # 1个时刻 1个model kfold的结果 [nkfold]
+  .predict_xgb <- function(models, Xi) {
+    sapply(models, \(m) predict(m, as.matrix(Xi), validate_features = FALSE))
+  }
 
-    out <- data.table(site = x$site, time = x$time, lead = x$lead, Hydro = x$Q_sim)
-    out[, sprintf("XGB_k%02d", seq_along(p1)) := as.list(p1)]
-    out[, XGB_mean := mean(p1)]
-    out[, sprintf("XGBQlag_k%02d", seq_along(p2)) := as.list(p2)]
-    out[, XGBQlag_mean := mean(p2)]
-    out
-  }))
+  df_xbg <- df_new[, .(P, PET, Q_sim)]
+  df_xgbQlag <- df_new[, .(P, PET, Q_sim, Qlag)]
+
+  nfold <- length(models$XGB)
+  names_xgb <- sprintf("XGB_k%02d", 1:nfold)
+  names_xgbQlag <- sprintf("XGBQlag_k%02d", 1:nfold)
+
+  lapply(seq_len(nrow(df_new)), function(i) {
+    d <- df_new[i]
+    p1 <- .predict_xgb(models$XGB, df_xbg[i, ])
+    p2 <- .predict_xgb(models$XGBQlag[[d$lead]], df_xgbQlag[i, ])
+
+    out <- data.table(Hydro = d$Q_sim)
+    c(setNames(p1, names_xgb), setNames(p2, names_xgbQlag)) %>%
+      as.list() %>%
+      as.data.table() %>%
+      mutate(
+        XGB_mean = mean(as.numeric(p1)),
+        XGBQlag_mean = mean(as.numeric(p2))
+      )
+  }) %>%
+    rbindlist() %>%
+    dt_round(digits = 2) %>%
+    cbind(df_new[, .(site, time, lead, Hydro = Q_sim)], .)
 }
 
-#' XAJ window 的 XGBoost 后处理主函数
-#' xaj_window 必须已包含 PET 或 PET_Romanenko。
+# 构造 forecast 段 XGB 输入
+#' @export
+build_xgb_X_t0 <- function(d, nlead = 12) {
+  d <- check_input(d)
+  t0 <- d[period == "analysis", time] %>% max()
+  qobs_t0 <- d[period == "analysis" & time <= t0 & !is.na(Q_obs)][.N, Q_obs]
+
+  d[period == "forecast" & time > t0] %>%
+    .[1:nlead, .(site, time, P, PET, Q_sim)] %>%
+    mutate(
+      lead = sprintf("lead_%02d", 1:nlead),
+      Qlag = qobs_t0 # 率定期最后一个观测值作为 Qlag 输入
+    )
+}
+
 #' @export
 run_xgb_forecast <- function(
   site = NULL, f_fcWin, f_xgb = NULL, f_calib = NULL,
   fout = "OUTPUT/XAJ_XGB_forecast.csv", nlead = 12, force_calib = FALSE
 ) {
-  models <- calib_xgb_forecast(
+  models <- calib_xgb(
     site = site, f_xgb = f_xgb, f_calib = f_calib,
     nlead = nlead, force_calib = force_calib
   )
 
-  d <- fread(f_fcWin) %>% check_input()
-  input <- make_xgb_forecast_input(d, nlead)
-
-  pred <- predict_xgb_forecast(models, input)
+  d <- fread(f_fcWin) %>% check_input() # about 1w
+  input <- build_xgb_X_t0(d, nlead)
+  pred <- predict_xgb(models, input)
 
   mkdir(dirname(fout))
   fwrite(pred, fout)

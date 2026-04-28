@@ -9,6 +9,7 @@ add_previous <- function(d, nlead = 12) {
 }
 
 #' @import xgboost
+#' @importFrom kfold previous_tn kfold_xgboost
 #' @export
 train_xgboost <- function(data_full, leads = 1:12, ...) {
   model <- function(X, Y, ...) {
@@ -18,12 +19,12 @@ train_xgboost <- function(data_full, leads = 1:12, ...) {
     )
   }
 
-  input <- data_full %>% add_previous()
+  input <- data_full %>% add_previous(nlead = length(leads))
   data <- input[!is.na(Q_obs), ]
   vars_Q <- names(input) %>% .[grep("Q_t-", .)]
 
   Y <- select(data, Q_obs)
-  leads <- leads %>% set_names(., .)
+  names(leads) <- sprintf("lead_%02d", seq_along(leads))
 
   X <- select(data, P, PET = PET_Romanenko, Q_sim)
   r_HydroMetXGB <- model(X, Y)
