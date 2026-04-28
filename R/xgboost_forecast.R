@@ -7,7 +7,7 @@ check_input <- function(d) {
     d %<>% mutate(PET_Romanenko = PET)
   }
   if (!inherits(d$time, "POSIXct")) {
-    d$time <- ymd_hms(gsub("T", " ", d$time), tz = "Asia/Shanghai")
+    d$time <- ymd_hms(d$time, tz = "Asia/Shanghai")
   }
   arrange(d, site, time)
 }
@@ -36,8 +36,8 @@ calib_xgb <- function(
 #' @export
 predict_xgb <- function(models, df_new) {
   # # 1个时刻 1个model kfold的结果 [nkfold]
-  .predict_xgb <- function(models, Xi) {
-    sapply(models, \(m) predict(m, as.matrix(Xi), validate_features = FALSE))
+  .predict_xgb <- function(models, Xti) {
+    sapply(models, \(m) predict(m, as.matrix(Xti), validate_features = FALSE))
   }
 
   df_xbg <- df_new[, .(P, PET, Q_sim)]
@@ -68,7 +68,7 @@ predict_xgb <- function(models, df_new) {
 
 # 构造 forecast 段 XGB 输入
 #' @export
-build_xgb_X_t0 <- function(d, nlead = 12) {
+build_xgb_Xt0 <- function(d, nlead = 12) {
   d <- check_input(d)
   t0 <- d[period == "analysis", time] %>% max()
   qobs_t0 <- d[period == "analysis" & time <= t0 & !is.na(Q_obs)][.N, Q_obs]
@@ -92,7 +92,7 @@ run_xgb_forecast <- function(
   )
 
   d <- fread(f_fcWin) %>% check_input() # about 1w
-  input <- build_xgb_X_t0(d, nlead)
+  input <- build_xgb_Xt0(d, nlead)
   pred <- predict_xgb(models, input)
 
   mkdir(dirname(fout))

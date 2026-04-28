@@ -3,7 +3,7 @@
 export(Q2R)
 export(R2Q)
 export(add_previous)
-export(build_xgb_X_t0)
+export(build_xgb_Xt0)
 export(cal_pass_rate)
 export(calib_xgb)
 export(check_input)
