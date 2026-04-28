@@ -64,7 +64,7 @@ detect_flood_events <- function(
 
 #' @rdname flood_divide
 #' @export
-merge_flood2 <- function(df, info_flood) {
+merge_flood2 <- function(df, info_flood, check.P = TRUE) {
   if ("time" %in% names(df)) time <- df$time
   dat <- map(1:nrow(info_flood), function(i) {
     info <- info_flood[i, ]
@@ -74,13 +74,15 @@ merge_flood2 <- function(df, info_flood) {
     mutate(d, group_name = info$group_name, .before = 1)
   }) %>% Ipaper::melt_list("group")
 
-  groups_bad <- dat[, .(P = sum(P, na.rm = TRUE)), .(group, group_name)][P <= 1, group_name]
-  if (length(groups_bad) > 0) {
-    SITE = df$site[1]
-    message(glue("Removing {length(groups_bad)} bad flood events for site {SITE}:"))
-    print(groups_bad)
-    dat %<>% rm_bad_groups(groups_bad)
-    info_flood %<>% rm_bad_groups(groups_bad)
+  if ("P" %in% names(df) && check.P) {
+    groups_bad <- dat[, .(P = sum(P, na.rm = TRUE)), .(group, group_name)][P <= 1, group_name]
+    if (length(groups_bad) > 0) {
+      SITE <- df$site[1]
+      message(glue("Removing {length(groups_bad)} bad flood events for site {SITE}:"))
+      print(groups_bad)
+      dat %<>% rm_bad_groups(groups_bad)
+      info_flood %<>% rm_bad_groups(groups_bad)
+    }
   }
   list(data = dat, info_flood = info_flood)
 }
@@ -118,7 +120,7 @@ flood_divide <- function(d, SITE, extend = 3, fout = NULL, show = FALSE) {
 }
 
 get_config <- function(SITE) {
-  f_config = path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
+  f_config <- path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
   config_all <- yaml::read_yaml(f_config)
 
   config <- if (is.null(config_all[[SITE]])) config_all$default else config_all[[SITE]]

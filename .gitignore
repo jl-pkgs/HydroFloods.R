@@ -8,3 +8,5 @@ backup
 
 *debug*
 Manifest.toml
+
+*.csv
