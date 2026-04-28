@@ -10,4 +10,5 @@ backup
 Manifest.toml
 
 *.csv
+*.jld2
 test

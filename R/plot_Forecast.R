@@ -20,7 +20,6 @@ plot_Forecast_Window <- function(
   # 防止全零导致除零
   if (q.max <= 0) q.max <- 1
   if (prcp.max <= 0) prcp.max <- 1
-  print(tail(d))
 
   ggplot(d, aes(x = time, y = Q_obs)) +
     annotate("rect",

@@ -4,7 +4,7 @@ read_output <- function(indir) {
     rbindlist()
 }
 
-#' 生成 XGBoost 参数组合；NULL 参数不传入模型，保留默认值
+# 生成 XGBoost 参数组合；NULL 参数不传入模型，保留默认值
 make_xgb_par_grid <- function(
   max_depth = c(2, 3), min_child_weight = c(5, 7, 9, 11, 13, 15, 20),
   eta = NULL, subsample = 1, lambda = NULL, nrounds = 200,
@@ -69,7 +69,7 @@ train_xgboost_par <- function(
   listk(data_full, data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
 }
 
-#' 批量运行单组参数并保存结果
+# 批量运行单组参数并保存结果
 run_xgb_test <- function(model, par_name, par, overwrite = FALSE, df = NULL, out_root = "./OUTPUT/test_xgboost") {
   outdir <- glue("{out_root}/{par_name}")
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
@@ -93,7 +93,7 @@ run_xgb_test <- function(model, par_name, par, overwrite = FALSE, df = NULL, out
   save(res, file = fout)
 }
 
-#' 二阶差分 RMS；k=2 时对应离散二阶导 root square
+# 二阶差分 RMS；k=2 时对应离散二阶导 root square
 rough_rms <- function(x, k = 2) {
   x <- x[is.finite(x)]
   if (length(x) <= k) {
@@ -153,7 +153,7 @@ score_one_xgb_par <- function(model, par_name, SITE = "县河", out_root = "./OU
   )
 }
 
-#' 汇总参数组评价指标并排序
+# 汇总参数组评价指标并排序
 build_xgb_score_table <- function(
   model = "XAJ", SITE = "县河", out_root = "./OUTPUT/test_xgboost",
   fout = "./OUTPUT/test_xgboost/parameter_score_alllead.csv"
