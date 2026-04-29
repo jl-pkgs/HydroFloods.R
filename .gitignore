@@ -15,4 +15,4 @@ Manifest.toml
 test
 
 # *.sh
-tests/test-xgb
+test-xgb
