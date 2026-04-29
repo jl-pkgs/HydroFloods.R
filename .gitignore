@@ -14,4 +14,4 @@ Manifest.toml
 *.jld2
 test
 
-*.sh
+# *.sh

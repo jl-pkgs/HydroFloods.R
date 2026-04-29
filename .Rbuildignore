@@ -3,6 +3,7 @@
 ^\.git
 ^scripts
 ^apps
+^src
 ^docs
 ^test
 ^OUTPUT
