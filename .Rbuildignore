@@ -9,6 +9,7 @@
 ^OUTPUT
 ^Figures
 ^backup
+^_build\.R$
 ^debug\.R$
 ^debug\.Rmd$
 ^debug\.rda$
