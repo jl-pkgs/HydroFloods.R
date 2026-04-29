@@ -4,13 +4,7 @@
 \alias{calib_xgb}
 \title{用 XAJ calib 历史模拟结果重新率定 XGB 后处理模型}
 \usage{
-calib_xgb(
-  site = NULL,
-  f_xgb = NULL,
-  f_calib = NULL,
-  nlead = 12,
-  force_calib = FALSE
-)
+calib_xgb(f_xgb = NULL, f_calib = NULL, nlead = 12, force_calib = FALSE)
 }
 \description{
 准备 XGBoost forecast 后处理模型

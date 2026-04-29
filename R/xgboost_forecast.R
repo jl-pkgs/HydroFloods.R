@@ -17,10 +17,7 @@ check_input <- function(d) {
 #' 准备 XGBoost forecast 后处理模型
 #' force_calib = TRUE 表示用 XAJ calib 文件重新率定；FALSE 表示读取已有 res。
 #' @export
-calib_xgb <- function(
-  site = NULL, f_xgb = NULL, f_calib = NULL,
-  nlead = 12, force_calib = FALSE
-) {
+calib_xgb <- function(f_xgb = NULL, f_calib = NULL, nlead = 12, force_calib = FALSE) {
   if (!isfile(f_xgb) || force_calib) {
     dat <- fread(f_calib) %>% check_input()
     xgb <- train_xgboost(dat, leads = seq_len(nlead))
@@ -82,20 +79,47 @@ build_xgb_Xt0 <- function(d, nlead = 12) {
 }
 
 #' @export
-run_xgb_forecast <- function(
-  site = NULL, f_fcWin, f_xgb = NULL, f_calib = NULL,
-  fout = "OUTPUT/XAJ_XGB_forecast.csv", nlead = 12, force_calib = FALSE
-) {
-  models <- calib_xgb(
-    site = site, f_xgb = f_xgb, f_calib = f_calib,
-    nlead = nlead, force_calib = force_calib
-  )
+xgb_forecast <- function(site = "孤山", model = "XAJ", dir_root = "./apps/", 
+  nlead = 12, force_calib = FALSE) 
+{
+  fs = build_filelist(site, model, dir_root) # filelist
+  print2(fs)
 
-  d <- fread(f_fcWin) %>% check_input() # about 1w
+  models <- calib_xgb(fs$xgb, fs$calib, nlead = nlead, force_calib = force_calib)
+
+  d <- fread(fs$fc_win) %>% check_input() # about 1w
   input <- build_xgb_Xt0(d, nlead)
   pred <- predict_xgb(models, input)
 
-  mkdir(dirname(fout))
-  fwrite(pred, fout)
+  mkdir(dirname(fs$out))
+  fwrite(pred, fs$out)
   pred
+}
+
+
+#' @export
+xgb_forecast_yaml <- function(yaml, verbose = TRUE) {
+  cfg = yaml::read_yaml(yaml)
+  if (verbose) print2(cfg)
+
+  xgb_forecast(
+    site = cfg[["site"]],
+    model = cfg[["model"]],
+    dir_root = cfg[["dir_root"]],
+    nlead = cfg[["xgb_nlead"]],
+    force_calib = cfg[["xgb_force_calib"]]
+  )
+}
+
+#' @export
+build_filelist <- function(site = "孤山", model = "XAJ", dir_root = "./apps/") {
+  prefix = sprintf("%s/%s/%s_%s", dir_root, site, site, model)
+  mkdir(dirname(prefix))
+  
+  list(
+    xgb = sprintf("%s_model_xgb.rds", prefix),   # 率定模型
+    out = sprintf("%s_forcast_win_xgb.csv", prefix), # [out] 输出数据
+    fc_win = sprintf("%s_forecast_win.csv", prefix),  # [in ] 输入数据，
+    calib = sprintf("%s_simulate_calib.csv", prefix)    # [in ] 率定数据
+  )
 }

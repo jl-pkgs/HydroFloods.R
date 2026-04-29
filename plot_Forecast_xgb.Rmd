@@ -1,0 +1,37 @@
+```{r}
+pacman::p_load(
+  Ipaper, data.table, dplyr, lubridate,
+  stringr, 
+  ggnewscale
+)
+```
+
+```{r}
+# "apps/孤山/孤山_XAJ_forcast_win_xgb.csv"
+tidy_xgb <- function(fout_xgb) {
+  d <- fread(fout_xgb)
+  HydroMetXGB = d %>%
+    select(time, starts_with("XGB_")) %>%
+    melt(c("time"), variable.name = "fold", value.name = "HydroMetXGB") %>%
+    mutate(fold = str_extract(fold, "(?<=_).*"))
+  HydroMetQlagXGB = d %>%
+    select(time, starts_with("XGBQlag_")) %>%
+    melt(c("time"), variable.name = "fold", value.name = "HydroMetQlagXGB") %>%
+    mutate(fold = str_extract(fold, "(?<=_).*"))
+
+  merge(HydroMetXGB, HydroMetQlagXGB) %>% melt(c("time", "fold"))
+}
+
+p = p + 
+  scale_color_manual(values = c("Qsim" = "purple"), name = NULL) +
+  # labs(color = NULL) + 
+  new_scale_color() + 
+  geom_line(data = d_xgb[fold == "mean"], aes(time, value, color = variable)) + 
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) + 
+  labs(color = NULL)
+write_fig(p, 'Rplot.pdf', 10, 5, show = FALSE)
+```
+
+```{r}
+
+```

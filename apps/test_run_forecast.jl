@@ -1,74 +1,60 @@
 using ModernHydroModels
-import ModernHydroModels: init_R, plot_floods, plot_forecast_window
-using RTableTools, Dates
-using JLD2, RCall, YAML
+using RTableTools, Dates, RCall, YAML
+
 
 function init_R()
-  # R_PATH = joinpath(pkgdir(ModernHydroModels), "ext", "HydroFloods.R")
-  R_PATH = "."
   R"""
-  if (!requireNamespace("pacman", quietly=TRUE)) install.packages("pacman")
-  pacman::p_load(Ipaper, data.table, dplyr, purrr, lubridate, ggplot2, gg.layers, xgboost, kfold)
-  devtools::load_all($(R_PATH))
+  pacman::p_load(Ipaper, data.table, dplyr, lubridate, ggplot2, gg.layers, HydroFloods)
+  devtools::load_all("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/ext/HydroFloods.R")
   """
 end
 
-function plot_floods(f_csv, site, outdir, prefix)
-  R"Floods_Visualization($f_csv, SITE=$site, show_floods=TRUE, show=FALSE, outdir=$outdir, prefix=$prefix, subfix='')"
+function plot_simulation(f_qout::String, site::String, dir_root::String, prefix::String)
+  outdir = "$dir_root/$site"
+  R"Floods_Visualization($f_qout, SITE=$site, show_floods=TRUE, show=FALSE, outdir=$outdir, prefix=$prefix, subfix='')"
 end
 
-function plot_forecast_window(f_fc, t0_dt::DateTime, outdir, prefix;
-  window_past="7 days", window_fc="1 day")
-  t0_str = Dates.format(t0_dt, "yyyy-mm-dd HH:MM:SS")
-  f_out = "$outdir/$(prefix)_ForecastWindow.svg"
+function plot_forecast(t0_dt::DateTime, f_fc::String, fs_r; window_past="7 days", window_fc="1 day")
+  outdir = dirname(f_fc)
+  site = basename(dirname(f_fc))
+  f_out = "$outdir/Figure_forecast_$(site)_ForecastWindow.svg"
+  fout_xgb = fs_r[:out]
+
   R"""
-  d  <- data.table::fread($f_fc)
-  d[, time := lubridate::ymd_hms(time)]
-  t0 <- as.POSIXct($t0_str, tz = "UTC")
-  p  <- plot_Forecast_Window(d, t0,
-    window_past = lubridate::as.duration($window_past),
-    window_fc   = lubridate::as.duration($window_fc))
+  p  <- plot_Forecast($t0_dt, $f_fc, $fout_xgb, window_past = $window_past, window_fc = $window_fc)
   Ipaper::write_fig(p, $f_out, 10, 4, show = FALSE)
   """
 end
 
-# ── 构造测试用 X1/X2（正式使用时由用户自行准备好数据文件）──────────────────────
-cfg = YAML.load_file("apps/config_GuShan.yaml")
-cfg_nt = Dict2NT(cfg)
-(; forcing_calib, forcing_forecast) = cfg_nt
-
-##
-mkpath(dirname(forcing_calib))
-mkpath(dirname(forcing_forecast))
-
-
-d = fread("apps/Forcing_GuShan_Lumped.csv")
-n_calib = round(Int, nrow(d) * 0.7)
-fwrite(d[1:n_calib, :], forcing_calib)
-fwrite(d[n_calib+1:end, :], forcing_forecast)
-
-# ── 运行预报 ───────────────────────────────────────────────────────────────────
-result = run_forecast(cfg);
-# @info "Result" result.scenario length(result.fluxes_fc.R_sim)
-
-##
-# ── 运行 XGBoost 后处理 ───────────────────────────────────────────────────────
-if cfg["xgb_run"]
-  init_R()
-  force_calib = cfg["xgb_force_calib"]
-  nlead = cfg["xgb_nlead"]
-
+function FiguresALL(cfg)
+  cfg_nt = Dict2NT(cfg)
   (; site, model, dir_root) = cfg_nt
-  f_fc_win = "$(dir_root)/$(site)_$(model)_window.csv"   # [in ] 输入数据，fc_win
-  f_calib = "$(dir_root)/$(site)_$(model)_calib.csv"     # [in ] 率定数据
-  f_out = "$(dir_root)/$(site)_$(model)_window_xgb.csv"  # [out] 输出数据
 
-  f_xgb = "OUTPUT/res_XAJ.rds"
-  R"""
-  pred_xgb <- run_xgb_forecast($site, $f_fc_win, $f_xgb, 
-   f_calib = $f_calib,
-   fout=$f_out, nlead=$nlead, force_calib=FALSE)
-  """
+  t0_dt = parse_datetime(cfg["t0"]) # UTC时间
+  fs = build_filelist(site, model, dir_root)
+  fs_r = R"build_filelist($site, $model, $dir_root)" |> rcopy
+
+  init_R()
+  plot_simulation(fs["simu_calib"], site, dir_root, "Figure_calib_$site")
+  plot_simulation(fs["fc"], site, dir_root, "Figure_forecast_$site")
+  plot_forecast(t0_dt, fs["fc"], fs_r)
 end
 
+## 0. 准备测试数据（正式使用时由用户自行准备好数据文件）──────────────────────────────
+d = fread("apps/Forcing_GuShan_Lumped.csv")
+n_calib = round(Int, nrow(d) * 0.7)
+fwrite(d[1:n_calib, :], "apps/X1_孤山.csv")
+fwrite(d[n_calib+1:end, :], "apps/X2_孤山.csv")
+
+## 1. Run Hydro
+cfg = YAML.load_file("apps/config_GuShan.yaml")
+result = run_forecast(cfg);
+
+## 2. xgb 偏差矫正
+if cfg["xgb_run"]
+  init_R()
+  R"xgb_forecast_yaml('./apps/config_GuShan.yaml', verbose=FALSE)"
+end
+
+FiguresALL(cfg) # 3 绘图
 "Finished"
