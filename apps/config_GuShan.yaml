@@ -1,5 +1,5 @@
 # 预报配置文件 — 孤山站
-# 修改下方参数后，运行 test_run_forecast.jl 即可
+app: /home/kong/julia_apps/bin/ModernHydro # Julia ModernHydroModels路径
 
 # ── 数据路径 ──────────────────────────────────────────────────────────────────
 forcing_calib:    "apps/X1_孤山.csv"   # 历史率定数据（X1）

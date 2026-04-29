@@ -3,19 +3,18 @@ pacman::p_load(
   HydroFloods
 )
 # devtools::load_all()
-# pak::pkg_install("jl-pkgs/HydroFloods.R")
 
 yaml <- commandArgs(trailingOnly = TRUE)[1]
 if (is.na(yaml)) yaml <- "./apps/config_GuShan.yaml"
 xgb_forecast_yaml(yaml)
 
-
-app = "/home/kong/julia_apps/bin/ModernHydro"
+cfg <- yaml::read_yaml(yaml)
+app = cfg[["app"]]
+# app = "/home/kong/julia_apps/bin/ModernHydro"
 cmd = sprintf('%s "%s"', app, yaml)
 system(cmd)
 
 ## 绘图 ────────────────────────────────────────────────────────────────────────
-cfg <- yaml::read_yaml(yaml)
 site     <- cfg[["site"]]
 model    <- cfg[["model"]]
 dir_root <- cfg[["dir_root"]]
