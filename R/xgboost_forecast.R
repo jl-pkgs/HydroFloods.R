@@ -79,13 +79,14 @@ build_xgb_Xt0 <- function(d, nlead = 12) {
 }
 
 #' @export
-xgb_forecast <- function(site = "孤山", model = "XAJ", dir_root = "./apps/", 
-  nlead = 12, force_calib = FALSE) 
-{
-  fs = build_filelist(site, model, dir_root) # filelist
+xgb_forecast <- function(
+  site = "孤山", model = "XAJ", dir_root = "./apps/",
+  nlead = 12, force_calib = FALSE
+) {
+  fs <- build_filelist(site, model, dir_root) # filelist
   print2(fs)
 
-  models <- calib_xgb(fs$xgb, fs$calib, nlead = nlead, force_calib = force_calib)
+  models <- calib_xgb(fs$xgb, fs$simulation_calib, nlead = nlead, force_calib = force_calib)
 
   d <- fread(fs$fc_win) %>% check_input() # about 1w
   input <- build_xgb_Xt0(d, nlead)
@@ -99,7 +100,7 @@ xgb_forecast <- function(site = "孤山", model = "XAJ", dir_root = "./apps/",
 
 #' @export
 xgb_forecast_yaml <- function(yaml, verbose = TRUE) {
-  cfg = yaml::read_yaml(yaml)
+  cfg <- yaml::read_yaml(yaml)
   if (verbose) print2(cfg)
 
   xgb_forecast(
@@ -113,13 +114,15 @@ xgb_forecast_yaml <- function(yaml, verbose = TRUE) {
 
 #' @export
 build_filelist <- function(site = "孤山", model = "XAJ", dir_root = "./apps/") {
-  prefix = sprintf("%s/%s/%s_%s", dir_root, site, site, model)
+  prefix <- sprintf("%s/%s/%s_%s", dir_root, site, site, model)
   mkdir(dirname(prefix))
-  
+
   list(
-    xgb = sprintf("%s_model_xgb.rds", prefix),   # 率定模型
-    out = sprintf("%s_forcast_win_xgb.csv", prefix), # [out] 输出数据
-    fc_win = sprintf("%s_forecast_win.csv", prefix),  # [in ] 输入数据，
-    calib = sprintf("%s_simulate_calib.csv", prefix)    # [in ] 率定数据
+    simulation_calib = sprintf("%s_simulate_calib.csv", prefix),   # [in ] 训练期 Q_sim
+    fc               = sprintf("%s_forecast.csv", prefix),         # [in ] 预报期输出
+    fc_win           = sprintf("%s_forecast_win.csv", prefix),     # [in ] 预报窗口输入
+    xgb              = sprintf("%s_model_xgb.rds", prefix),        # [mod] XGB 率定模型
+    out              = sprintf("%s_forecast_win_xgb.csv", prefix), # [out] XGB 后处理结果
+    model            = sprintf("%s_model_hydro.jld2", prefix)
   )
 }
