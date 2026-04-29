@@ -10,6 +10,7 @@
 ^Figures
 ^backup
 ^_build\.R$
+^_build\.sh$
 ^debug\.R$
 ^debug\.Rmd$
 ^debug\.rda$

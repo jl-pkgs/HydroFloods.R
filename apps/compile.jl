@@ -4,7 +4,9 @@ using Pkg
 
 app_dir = joinpath(@__DIR__, "..")
 # out_dir = joinpath(@__DIR__, "build")
-out_dir = "/home/kong/julia_apps" # TODO: change path
+
+out_dir = abspath(expanduser("~/ModernHydro")) # TODO: change path
+mkpath(out_dir)
 
 Pkg.activate(app_dir)
 Pkg.instantiate()
