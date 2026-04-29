@@ -47,3 +47,14 @@ movsum <- function(x, win_p = 24) {
     fill = NA, align = "right", partial = TRUE
   )
 }
+
+#' add_previous
+#' @param d with the variable of `Q_obs`
+#' @param nlead the number of leads to add
+#' @export
+add_previous <- function(d, nlead = 12) {
+  Qs <- previous_tn(d$Q_obs, nlead)[, -1] %>%
+    as.data.table() %>%
+    rename_with(\(x) paste0("Q_", x))
+  cbind(d, Qs)
+}

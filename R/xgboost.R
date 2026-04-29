@@ -1,13 +1,3 @@
-#' add_previous
-#' @param d with the variable of `Q_obs`
-#' @export
-add_previous <- function(d, nlead = 12) {
-  Qs <- previous_tn(d$Q_obs, nlead)[, -1] %>%
-    as.data.table() %>%
-    rename_with(\(x) paste0("Q_", x))
-  cbind(d, Qs)
-}
-
 #' @import xgboost
 #' @importFrom kfold previous_tn kfold_xgboost
 #' @export
