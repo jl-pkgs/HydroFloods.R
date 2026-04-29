@@ -1,7 +1,12 @@
+name = "ModernHydroApp"
+uuid = "a1b2c3d4-0000-0000-0000-000000000001"
+version = "0.1.0"
+
 [deps]
 FieldMetadata = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
 ModelParams = "213f2e2a-cade-4ae1-a9bc-67b7781bcca8"
 ModernHydroModels = "6c269de5-af4f-4eec-beb6-c1382dcfb534"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [sources]
 FieldMetadata = {rev = "master", url = "https://github.com/kongdd/FieldMetadata.jl"}
@@ -11,3 +16,4 @@ ModernHydroModels = {rev = "master", url = "https://github.com/jl-pkgs/ModernHyd
 [compat]
 ModelParams = "0.1.2"
 ModernHydroModels = "0.1.3"
+YAML = "0.4.16"

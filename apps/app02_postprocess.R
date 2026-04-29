@@ -15,3 +15,5 @@ xgb_forecast_yaml("./apps/config_GuShan.yaml")
 # model <- cfg[["model"]]
 # dir_root <- cfg[["dir_root"]]
 # pred_xgb <- xgb_forecast(site, model, dir_root, nlead = 24, force_calib = FALSE)
+
+## TODO: 绘图的脚本加到这里

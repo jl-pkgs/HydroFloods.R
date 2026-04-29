@@ -13,3 +13,5 @@ Manifest.toml
 *.rds
 *.jld2
 test
+
+*.sh

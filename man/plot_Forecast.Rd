@@ -5,8 +5,8 @@
 \title{预报窗口图：过去一周 + 未来n小时，凸显t0位置与预报时段}
 \usage{
 plot_Forecast(
-  d_sim,
   t0,
+  fout_sim,
   fout_xgb = NULL,
   prcp.max = NULL,
   q.max = NULL,
@@ -17,11 +17,13 @@ plot_Forecast(
 \arguments{
 \item{t0}{预报起点，POSIXct 或可被 as.POSIXct 解析的字符串}
 
+\item{fout_sim}{预报阶段，X2对应的全部模拟结果, 必须包含 time, Q_obs, Q_sim, P列}
+
+\item{fout_xgb}{可选，XGBoost后处理的结果文件，必须包含 time, XGB_mean, XGBQlag_mean列}
+
 \item{window_past}{回溯时长（默认7天）}
 
 \item{window_fc}{预报时长（默认1天）}
-
-\item{d}{data.table，含 time, P, Q_obs, Q_sim}
 }
 \description{
 预报窗口图：过去一周 + 未来n小时，凸显t0位置与预报时段
