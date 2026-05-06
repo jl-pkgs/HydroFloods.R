@@ -119,8 +119,10 @@ flood_divide <- function(d, SITE, extend = 3, fout = NULL, show = FALSE) {
   return(r)
 }
 
-get_config <- function(SITE) {
-  f_config <- path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
+get_config <- function(SITE, ..., f_config = NULL) {
+  if (is.null(f_config)) {
+    f_config <- path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl/Project_Shiyan2025/config_flood_events_十堰.yaml")
+  }
   config_all <- yaml::read_yaml(f_config)
 
   config <- if (is.null(config_all[[SITE]])) config_all$default else config_all[[SITE]]
