@@ -6,13 +6,14 @@ pacman::p_load(
 
 yaml <- commandArgs(trailingOnly = TRUE)[1]
 if (is.na(yaml)) yaml <- "./apps/config_GuShan.yaml"
-xgb_forecast_yaml(yaml)
 
 cfg <- yaml::read_yaml(yaml)
 app = cfg[["app"]]
 # app = "/home/kong/julia_apps/bin/ModernHydro"
 cmd = sprintf('%s "%s"', app, yaml)
-system(cmd)
+system(cmd) # julia side
+
+xgb_forecast_yaml(yaml)
 
 ## 绘图 ────────────────────────────────────────────────────────────────────────
 site     <- cfg[["site"]]

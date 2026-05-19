@@ -1,7 +1,6 @@
 module ModernHydroApp
 
-using ModernHydroModels
-using YAML
+using ModernHydroModels, YAML
 
 function julia_main()::Cint
   printstyled("""
