@@ -1,5 +1,35 @@
+# 构造 XGB 输入特征 (训练 train_xgboost / 预测 predict_xgboost 共用)
+# 返回含有效观测行的 data, 及各模型的特征:
+#   - MetXGB           : 仅气象 P, PET
+#   - HydroMetXGB      : P, PET, Q_sim
+#   - HydroMetQlagXGB  : 上述 + 各 lead 的滞后流量 Q_t-lead
+#   - QlagXGB          : 仅用各 lead 的滞后流量 Q_t-lead
+#' @importFrom kfold previous_tn
+xgb_features <- function(data_full, leads = 1:12) {
+  input <- data_full %>% add_previous(nlead = length(leads))
+  data <- input[!is.na(Q_obs), ]
+  vars_Q <- names(input) %>% .[grep("Q_t-", .)]
+  names(leads) <- sprintf("lead_%02d", seq_along(leads))
+
+  listk(data,
+    MetXGB = select(data, P, PET = PET_Romanenko),
+    QlagXGB = map(leads, \(l) select(data, all_of(vars_Q[l]))),
+    HydroMetXGB = select(data, P, PET = PET_Romanenko, Q_sim),
+    HydroMetQlagXGB = map(leads, \(l) select(data, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[l])))
+  )
+}
+
+#' 训练 XGB 洪水预报后处理模型
+#'
+#' 对 5 个模型族 (MetXGB / QlagXGB / HydroMetXGB / HydroMetQlagXGB) 分别做
+#' kfold 训练. 特征由 `xgb_features()` 构造. 配套预测见 [predict_xgboost()],
+#' 表现检验见 [summary_xgboost()].
+#' @param data_full 训练数据, 含 `site, time, Q_obs, P, Q_sim, PET_Romanenko`
+#' @param leads 预见期 (小时)
+#' @param ... 透传给 `kfold_xgboost()`
+#' @return list: `data_full`, `data` (有效观测行), 及各模型族的 kfold 拟合结果
 #' @import xgboost
-#' @importFrom kfold previous_tn kfold_xgboost
+#' @importFrom kfold kfold_xgboost
 #' @export
 train_xgboost <- function(data_full, leads = 1:12, ...) {
   model <- function(X, Y, ...) {
@@ -9,61 +39,15 @@ train_xgboost <- function(data_full, leads = 1:12, ...) {
     )
   }
 
-  input <- data_full %>% add_previous(nlead = length(leads))
-  data <- input[!is.na(Q_obs), ]
-  vars_Q <- names(input) %>% .[grep("Q_t-", .)]
-
-  Y <- select(data, Q_obs)
-  names(leads) <- sprintf("lead_%02d", seq_along(leads))
-
-  X <- select(data, P, PET = PET_Romanenko, Q_sim)
-  r_HydroMetXGB <- model(X, Y)
-
-  res_HydroMetQlagXGB <- map(leads, function(lead) {
-    runningId(lead)
-    X <- select(data, P, PET = PET_Romanenko, Q_sim, all_of(vars_Q[lead]))
-    r <- model(X, Y)
-  })
-  listk(data_full, data = data, HydroMetXGB = r_HydroMetXGB, HydroMetQlagXGB = res_HydroMetQlagXGB)
-}
-
-## 检验洪水的合格率
-#' cal_pass_rate
-#' @description 
-#' - `data_flood`: 只保留了洪水场次的数据
-#' - `data`      : 包含了甲方提供的所有洪水场次表
-#' @export
-cal_pass_rate <- function(xgb) {
-  d_full <- xgb$data_full
-  data <- xgb$data # d <- d_full[!is.na(Q_obs), ]
-  SITE <- data$site[1]
-
-  ## flood_events 信息
-  c(data_flood, info_flood) %<-% flood_divide(d_full, SITE)
-  d_flood <- data_flood[, .(group, group_name, site, time, Q_obs)] 
-  n_flood <- d_flood$group_name %>% unique_length()
-
-  lst <- list(
-    Hydro = get_pred_Hydro(data),
-    HydroMetXGB = get_pred_HydroMetXGB(xgb$HydroMetXGB, data),
-    HydroMetQlagXGB = get_pred_HydroMetQlagXGB(xgb$HydroMetQlagXGB, data)
-  ) %>% map(\(x) merge(d_flood, x, by = "time"))
-
-  info_pass <- map(lst, function(dat) {
-    info <- dat[, eval_Qmax(Q_obs, Q_sim), .(group, group_name, lead)]
-    info[passed == TRUE, .(perc_pass = .N / n_flood), .(lead)]
-  }) %>% melt_list("model") %>% arrange(model, lead)
-
-  gof <- list(
-    Hydro = data[, GOF(Q_obs, Q_sim)],
-    HydroMetXGB = xgb$HydroMetXGB$gof[kfold == "all", ],
-    HydroMetQlagXGB = tidy_gof(xgb$HydroMetQlagXGB) %>% melt_list("lead")
+  X <- xgb_features(data_full, leads)
+  Y <- select(X$data, Q_obs)
+  listk(data_full, data = X$data,
+    MetXGB = model(X$MetXGB, Y),
+    QlagXGB = map(X$QlagXGB, \(Xi) model(Xi, Y)),
+    HydroMetXGB = model(X$HydroMetXGB, Y),
+    HydroMetQlagXGB = map(X$HydroMetQlagXGB, \(Xi) model(Xi, Y))
   )
-  listk(info_pass, info_flood, gof)
 }
-
-tidy_gof <- \(lst) map(lst, \(l) l$gof[kfold == "all", ])
-
 
 get_pred <- function(xgb) {
   data <- xgb$data
