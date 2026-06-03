@@ -99,8 +99,8 @@ xgb_forecast <- function(
 
 
 #' @export
-xgb_forecast_yaml <- function(yaml, verbose = TRUE) {
-  cfg <- yaml::read_yaml(yaml)
+xgb_forecast_main <- function(cfg, verbose = TRUE) {
+  # cfg <- yaml::read_yaml(yaml)
   if (verbose) print2(cfg)
 
   xgb_forecast(

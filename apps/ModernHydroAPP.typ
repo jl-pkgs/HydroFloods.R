@@ -45,12 +45,6 @@ time,area_km2,Z,Q,R,P,PET_FAO98,PET_PT1972,PET_Romanenko,Tair
 ```
 
 
-推荐输入变量如下：
-
-```text
-time, area_km2, Q, R, P, PET
-```
-
 变量说明如下：
 
 #table(
@@ -61,7 +55,10 @@ columns: (1.8fr, 4fr),
 [Q], [实测流量，m³/s],
 [R], [实测径流深，mm/h],
 [P], [降水量，mm],
-[PET], [潜在蒸散发，mm],
+[`PET_Romanenko`], [当前示例默认使用的潜在蒸散发输入,mm。],
+[`PET_FAO98`], [备用，当前示例默认流程不直接使用。],
+[`PET_PT1972`], [备用，当前示例默认流程不直接使用。],
+[`Tair`], [气温，当前示例默认流程不直接使用。],
 )
 == 2.2 配置文件说明
 
@@ -92,9 +89,9 @@ n_fc  : 24                    # t0=X2末尾时自动延伸的预报时长（小�
 ratio : 0.0                   # 未来降水系数：0=填零，>0则 ratio×近期均值
 
 # ── XGBoost 后处理设置 ───────────────────────────────────────────────
-xgb_run         : true
-xgb_force_calib : false
-xgb_nlead       : 24 # 当前只做未来 12 小时
+xgb_run         : true    # true=运行XGBoost后处理；false=只运行水文模型
+xgb_force_calib : false  # true=重新训练XGB；false=读取已有XGB模型
+xgb_nlead       : 24 # 预报时长，当前选择未来24小时
 
 ```
 

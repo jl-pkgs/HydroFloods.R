@@ -1,9 +1,9 @@
 module ModernHydroApp
 
-using ModernHydroModels, YAML
+using ModernHydroModels, TOML
 
-function julia_main()::Cint
-  printstyled("""
+function _main(args::Vector{String})::Cint
+  print("""
   ┌─────────────────────────────────────────────────────────┐
   │   ModernHydroModels v0.1.0, 20260429                    │
   │   A Modern Hydrological Forecasting Application         │
@@ -12,17 +12,20 @@ function julia_main()::Cint
   │   kongdd.sysu@gmail.com                                 │
   │   China University of Geosciences (Wuhan)               │
   └─────────────────────────────────────────────────────────┘
-  """, color=:green)
+  """)
 
-  cfg_path = length(ARGS) > 0 ? ARGS[1] : "config.yaml"
+  cfg_path = length(args) > 0 ? args[1] : "config.toml"
   if !isfile(cfg_path)
     println(stderr, "ERROR: Config file not found: $cfg_path")
-    println(stderr, "Usage: forecast <config.yaml>")
+    println(stderr, "Usage: ModernHydro <config.toml>")
     return 1
   end
-  cfg = YAML.load_file(cfg_path)
+  cfg = TOML.parsefile(cfg_path)
   run_forecast(cfg)
   return 0
 end
+
+# PackageCompiler (compile.jl)
+julia_main()::Cint = _main(ARGS)
 
 end # module

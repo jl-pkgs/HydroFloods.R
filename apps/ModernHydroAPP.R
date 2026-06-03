@@ -1,19 +1,19 @@
 pacman::p_load(
   Ipaper, data.table, dplyr, lubridate,
-  HydroFloods
+  HydroFloods, toml
 )
 # devtools::load_all()
 
-yaml <- commandArgs(trailingOnly = TRUE)[1]
-if (is.na(yaml)) yaml <- "./apps/config_GuShan.yaml"
+toml <- commandArgs(trailingOnly = TRUE)[1]
+if (is.na(toml)) toml <- "./apps/config_GuShan.toml"
 
-cfg <- yaml::read_yaml(yaml)
+cfg <- read_toml(toml)
 app = cfg[["app"]]
-# app = "/home/kong/julia_apps/bin/ModernHydro"
-cmd = sprintf('%s "%s"', app, yaml)
-system(cmd) # julia side
 
-xgb_forecast_yaml(yaml)
+# app = "/home/kong/julia_apps/bin/ModernHydro"
+cmd = sprintf('%s "%s"', app, toml)
+system(cmd) # julia side
+xgb_forecast_main(cfg)
 
 ## 绘图 ────────────────────────────────────────────────────────────────────────
 site     <- cfg[["site"]]

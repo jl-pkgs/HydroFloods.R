@@ -6,14 +6,12 @@ version = "0.1.0"
 FieldMetadata = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
 ModelParams = "213f2e2a-cade-4ae1-a9bc-67b7781bcca8"
 ModernHydroModels = "6c269de5-af4f-4eec-beb6-c1382dcfb534"
-YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
 [sources]
-FieldMetadata = {rev = "master", url = "https://github.com/kongdd/FieldMetadata.jl"}
-ModelParams = {rev = "bcfe3b052b5f931a51c953d8f3d94a00edf9882c", url = "https://github.com/jl-pkgs/ModelParams.jl"}
+ModelParams = {rev = "master", url = "https://github.com/jl-pkgs/ModelParams.jl"}
 ModernHydroModels = {rev = "master", url = "https://github.com/jl-pkgs/ModernHydroModels.jl"}
 
 [compat]
 ModelParams = "0.1.2"
 ModernHydroModels = "0.1.3"
-YAML = "0.4.16"

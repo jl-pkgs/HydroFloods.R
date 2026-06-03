@@ -1,5 +1,5 @@
 ## apps/config_GuShan.yaml
-app: /home/kong/julia_apps/bin/ModernHydro # Julia ModernHydroModels路径
+app: /home/kong/ModernHydro/bin/ModernHydro # Julia ModernHydroModels路径
 
 # ── 数据路径 ─────────────────────────────────────────────────────────
 forcing_calib    : "apps/X1_孤山.csv"   # 历史率定数据（X1）
