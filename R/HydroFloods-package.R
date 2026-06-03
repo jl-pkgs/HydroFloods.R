@@ -6,7 +6,7 @@
 #' @importFrom Ipaper %!in% write_fig
 #' @import data.table magrittr zeallot
 #' @importFrom stringr str_extract
-#' @import gg.layers
+#' @import kfold
 #' @import ggnewscale 
 #' @importFrom dplyr arrange relocate mutate group_by group_map
 "_PACKAGE"

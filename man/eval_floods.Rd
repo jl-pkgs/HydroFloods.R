@@ -2,15 +2,17 @@
 % Please edit documentation in R/xgboost_validate.R
 \name{eval_floods}
 \alias{eval_floods}
-\title{洪水场次合格率 (cal_pass_rate / summary_xgboost 共用)}
+\title{洪水场次合格率 (summary_xgboost 内部, train/valid/test 共用)}
 \usage{
-eval_floods(pred, d_full)
+eval_floods(pred, d_full, type)
 }
 \arguments{
 \item{pred}{含 \verb{time, model, lead, kfold, Q_obs, Q_sim} 列的长表;}
 
 \item{d_full}{划分洪水场次的全序列}
+
+\item{type}{情景标签, 写入 \code{info_pass$type} ("train" / "valid" / "test")}
 }
 \description{
-洪水场次合格率 (cal_pass_rate / summary_xgboost 共用)
+洪水场次合格率 (summary_xgboost 内部, train/valid/test 共用)
 }

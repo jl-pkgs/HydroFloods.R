@@ -37,4 +37,3 @@ Figure1_Qsim_1model <- function(model, ...) {
 }
 
 # InitCluster(6)
-

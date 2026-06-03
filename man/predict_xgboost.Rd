@@ -4,7 +4,12 @@
 \alias{predict_xgboost}
 \title{与 train_xgboost 配对的预测}
 \usage{
-predict_xgboost(object, newdata, leads = seq_along(object$HydroMetQlagXGB))
+predict_xgboost(
+  object,
+  newdata,
+  leads = seq_along(object$HydroMetQlagXGB),
+  only_ensemble = TRUE
+)
 }
 \arguments{
 \item{object}{\code{\link[=train_xgboost]{train_xgboost()}} 的返回}
@@ -12,6 +17,8 @@ predict_xgboost(object, newdata, leads = seq_along(object$HydroMetQlagXGB))
 \item{newdata}{新数据(含 \code{Q_obs}, \code{P}, \code{Q_sim} 等), 通常为验证期 \code{data_valid}}
 
 \item{leads}{预见期, 默认由 \code{object} 推断 (与训练时一致)}
+
+\item{only_ensemble}{\code{TRUE} 仅返回集合平均(\code{kfold = "mean"}); \code{FALSE} 同时返回各折 k01..k05}
 }
 \value{
 长表 \verb{[site, time, model, lead, Q_obs, kfold, Q_sim]}. model 取值

@@ -11,7 +11,7 @@ Figure2 <- function(model, overwrite = FALSE) {
     melt_list("site") %>%
     mutate(
       label = sprintf("%.2f", NSE),
-      type = factor(type, levels = c("test", "train"), labels = c("Validation", "Calibration"))
+      mode = factor(mode, levels = c("test", "train"), labels = c("Validation", "Calibration"))
     )
   gof_HydroMetXGB <- map(res, \(x) x$gof$HydroMetXGB) %>% melt_list("site")
 
@@ -23,9 +23,9 @@ Figure2 <- function(model, overwrite = FALSE) {
   labels <- d_lab[, setNames(label_mk, site)]
   # gof_HydroMetQlagXGB$site %>% levels
 
-  p <- ggplot(gof_HydroMetQlagXGB, aes(lead, NSE, color = type)) +
+  p <- ggplot(gof_HydroMetQlagXGB, aes(lead, NSE, color = mode)) +
     geom_line() +
-    geom_point(aes(shape = type)) +
+    geom_point(aes(shape = mode)) +
     geom_hline(
       data = gof_Hydro, aes(yintercept = NSE),
       linetype = 1, color = "blue", linewidth = 0.4,
@@ -36,7 +36,7 @@ Figure2 <- function(model, overwrite = FALSE) {
       vjust = -0.8, hjust = 0.2, size = 2.5, color = "blue", show.legend = FALSE
     ) +
     geom_text(
-      data = gof_HydroMetQlagXGB[type == "Validation"],
+      data = gof_HydroMetQlagXGB[mode == "Validation"],
       aes(label = label), vjust = -0.8, hjust = 0.2, size = 2.5, show.legend = FALSE
     ) +
     facet_wrap(~site, labeller = labeller(site = labels)) +

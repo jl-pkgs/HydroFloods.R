@@ -120,8 +120,8 @@ score_one_xgb_par <- function(model, par_name, SITE = "县河", out_root = "./OU
   gof <- gof[as.character(lead) != "-"]
   pass <- pass[as.character(lead) != "-" & model == "HydroMetQlagXGB"]
 
-  train <- gof[type == "train", .(train_nse = mean(NSE, na.rm = TRUE)), by = lead]
-  valid <- gof[type == "test", .(valid_nse = mean(NSE, na.rm = TRUE)), by = lead]
+  train <- gof[mode == "train", .(train_nse = mean(NSE, na.rm = TRUE)), by = lead]
+  valid <- gof[mode == "test", .(valid_nse = mean(NSE, na.rm = TRUE)), by = lead]
   dat_gof <- merge(train, valid, by = "lead")
   dat_gof[, gap := train_nse - valid_nse]
 

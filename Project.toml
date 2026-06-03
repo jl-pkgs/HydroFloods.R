@@ -3,7 +3,6 @@ uuid = "a1b2c3d4-0000-0000-0000-000000000001"
 version = "0.1.0"
 
 [deps]
-FieldMetadata = "bf96fef3-21d2-5d20-8afa-0e7d4c32a885"
 ModelParams = "213f2e2a-cade-4ae1-a9bc-67b7781bcca8"
 ModernHydroModels = "6c269de5-af4f-4eec-beb6-c1382dcfb534"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"

@@ -1,7 +1,8 @@
 ```{r}
-# 320.035s
+# 320s / 830s
 # Copyright (c) 2025 Dongdong Kong. All rights reserved.
 source('scripts/main_pkgs.R')
+library(patchwork)
 devtools::load_all()
 
 # read output of ModernHydroModels
@@ -16,6 +17,11 @@ root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()
 # indir = glue("{dir_root}/Project_Shiyan2025/OUTPUT/version1_千里眼/")
 dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
 
+f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
+forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair) # 仅使用气象数据
+```
+
+```{r}
 run_xgb <- function(model, overwrite=FALSE) {
   outdir = "./OUTPUT/V20260603/"
   fout <- glue("{outdir}/res_{model}.rda")
@@ -37,26 +43,24 @@ run_xgb <- function(model, overwrite=FALSE) {
     data_valid <- data_full[year(time) >= year_end]
     xgb <- train_xgboost(data_calib)
 
-    calib <- summary_xgboost(xgb, data_calib) # 率定期(样本内): newdata=NULL 用训练数据
-    valid <- summary_xgboost(xgb, data_valid) # 验证期(样本外)
-    listk(data_full, xgb, calib, valid)
+    summary <- summary_xgboost(xgb, data_valid) # 验证期(样本外)
+    listk(data_full, xgb, summary)
   }) %>% set_names(sites)
   save(res, file = fout)
 }
 
 ##
-model = MODELS[5]
+overwrite <- FALSE
+model = models[5]
+i = 2
 SITE <- sites[2]
 ```
 
 ##
 ```{r}
-f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
-forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair) # 仅使用气象数据
-
 # run_xgb MODELS[5], overwrite = TRUE)
 system.time({
-  map(MODELS, run_xgb, overwrite = TRUE)
+  map(models, run_xgb, overwrite = TRUE)
 })
 ```
 
@@ -64,54 +68,76 @@ system.time({
 ## 分析表现
 
 ```{r}
-# 然后对这个结果进行绘图
-models <- c("Hydro", "MetXGB", "QlagXGB", "HydroMetXGB", "HydroMetQlagXGB")
-gof = valid$gof %>% 
+I = 1
+MODEL = MODELS[I]
+f = glue("OUTPUT/V20260603/res_{MODEL}.rda")
+load(f)
+# , labeller = labeller(site = labels)
+```
+
+```{r}
+methods <- c("Hydro", "MetXGB", "QlagXGB", "HydroMetXGB", "HydroMetQlagXGB")[-c(2)]
+
+gof <- list(
+  calib = map(res, \(l) l$calib$gof) %>% rbindlist(idcol = "site"),
+  valid = map(res, \(l) l$valid$gof) %>% rbindlist(idcol = "site")
+) %>%
+  rbindlist(idcol = "mode") %>%
+  filter(model %in% methods) %>% 
   mutate(
-    model = factor(model, levels = models), 
+    model = factor(model, levels = methods),
     lead = as.integer(str_extract(lead, "\\d+")),
-  ) %>% arrange(model, lead) %>% 
+    label = sprintf("%.2f", NSE),
+  ) %>%
+  arrange(model, lead) %>%
   filter(kfold %in% c("-", "mean"))
 ```
 
 ```{r}
-p <- ggplot(gof, aes(lead, NSE, color = model)) +
-  geom_line() +
-  geom_point(aes(shape = model)) +
-  geom_hline(
-    data = gof[model == "Hydro"], aes(yintercept = NSE, color = "Hydro"),
-    linetype = 1, linewidth = 0.4,
-  ) +
-  # geom_hline(yintercept = 0.9, linetype = 2, linewidth = 0.2) +
-  # geom_text(
-  #   data = gof[model == "Hydro"], aes(x = 1, label = label, color = NULL),
-  #   vjust = -0.8, hjust = 0.2, size = 2.5, color = "blue", show.legend = FALSE
-  # ) +
-  # geom_text(
-  #   data = gof[model == "HydroMetQlagXGB" & type == "Validation"],
-  #   aes(label = label), vjust = -0.8, hjust = 0.2, size = 2.5, show.legend = FALSE
-  # ) +
-  # facet_wrap(~site, labeller = labeller(site = labels)) +
-  my_theme +
-  theme(
-    legend.position = "top",
-    legend.margin = margin(t = -2, b = -6, 0, 0),
-  ) +
-  scale_x_continuous(
-    breaks = seq(0, 12, 2), minor_breaks = seq(0, 12, 1),
-    guide = guide_axis(minor.ticks = TRUE),
-    limits = c(1, 12),
-    expand = expansion(mult = c(0.05, 0.05))
-  ) +
-  scale_y_continuous(
-    # label = scales::label_percent(),
-    guide = guide_axis(minor.ticks = TRUE)
-    # expand = expansion(mult = c(0.04, 0.1))
-  ) +
-  coord_cartesian(ylim = c(0.4, 1)) +
-  labs(x = "Leading time (hours)", color = NULL, shape = NULL)
+Figure1<- function(gof, title = NULL) {
+  p <- ggplot(gof, aes(lead, NSE, color = model, linetype = mode)) +
+    geom_line() +
+    geom_point(aes(shape = model)) +
+    geom_hline(
+      data = gof[model == "Hydro"], aes(yintercept = NSE, color = "Hydro", linetype = mode), linewidth = 0.4
+    ) +
+    # geom_hline(yintercept = 0.9, linetype = 2, linewidth = 0.2) +
+    # geom_text(
+    #   data = gof[model == "Hydro"], aes(x = 1, label = label, color = NULL),
+    #   vjust = -0.8, hjust = 0.2, size = 4.5, color = "blue", show.legend = FALSE
+    # ) +
+    # geom_text(
+    #   data = gof[model == "HydroMetQlagXGB" & mode == "Validation"],
+    #   aes(label = label), vjust = -0.8, hjust = 0.2, size = 2.5, show.legend = FALSE
+    # ) +
+    facet_wrap(~site) +
+    my_theme +
+    theme(
+      legend.position = "top",
+      legend.margin = margin(t = -2, b = -6, 0, 0),
+    ) +
+    scale_x_continuous(
+      breaks = seq(0, 12, 2), minor_breaks = seq(0, 12, 1),
+      guide = guide_axis(minor.ticks = TRUE),
+      limits = c(1, 12),
+      expand = expansion(mult = c(0.05, 0.05))
+    ) +
+    scale_y_continuous(
+      # label = scales::label_percent(),
+      guide = guide_axis(minor.ticks = TRUE)
+      # expand = expansion(mult = c(0.04, 0.1))
+    ) +
+    coord_cartesian(ylim = c(0.6, 1)) +
+    labs(x = "Leading time (hours)", color = NULL, shape = NULL, title = title, linetype = NULL)
+  p
+}
 
+# p1 <- Figure1(gof[mode == "calib"], title = "(a) Calibration")
+# p2 <- Figure1(gof[mode == "valid"], title = "(b) Validation")
+# p <- p1 / p2 + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+# write_fig(p, "FigureS1_NSE.pdf", 10, 12, show = FALSE)
 
+p <- Figure1(gof)
 # print(fout)
-write_fig(p, "a.pdf", 10, 5, show = FALSE)
+write_fig(p, glue("FigureS1_{MODEL}_NSE.pdf"), 10, 6, show = FALSE)
 ```
