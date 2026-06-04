@@ -2,12 +2,13 @@
 source("scripts/main_pkgs.R")
 library(patchwork)
 
-I = 1
+# %%
+I = 5
 MODEL = models[I]
-f = glue("OUTPUT/V20260603/res_{MODEL}.rda")``
+f = glue("OUTPUT/V20260603/res_{MODEL}.rda")
 load(f)
 # , labeller = labeller(site = labels)
-methods <- c("Hydro", "MetXGB", "QlagXGB", "HydroMetXGB", "HydroMetQlagXGB")[-c(2)]
+methods <- c("Hydro", "MetXGB", "QlagXGB", "HydroMetXGB", "HydroMetQlagXGB")[-c(2, 3)]
 
 gof <- map(res, \(l) l$summary$gof) %>% rbindlist(idcol = "site") %>%
   filter(model %in% methods) %>% 

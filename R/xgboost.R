@@ -34,13 +34,15 @@ xgb_features <- function(data_full, leads = 1:12) {
 train_xgboost <- function(data_full, leads = 1:12, ...) {
   model <- function(X, Y, ...) {
     kfold_xgboost(X, Y,
-      nrounds = 200, early_stopping_rounds = 20, # learning_rate = 0.1,
-      ..., max_depth = 3, min_child_weight = 5, subsample = 1
+      nrounds = 500, early_stopping_rounds = 30, eta = 0.05,
+      ..., max_depth = 3, min_child_weight = 6,
+      subsample = 0.8, gamma = 1, reg_lambda = 2
     )
   }
 
   X <- xgb_features(data_full, leads)
   Y <- select(X$data, Q_obs)
+
   listk(data_full, data = X$data,
     MetXGB = model(X$MetXGB, Y),
     QlagXGB = map(X$QlagXGB, \(Xi) model(Xi, Y)),
