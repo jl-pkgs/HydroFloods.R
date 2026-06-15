@@ -1,20 +1,5 @@
 # HydroFloods.R — 开发笔记
 
-## 运行 R：用 `arf` 代替 `Rscript`
-
-本机没有 `Rscript`，用 `arf`（Rust 编写的跨平台 R 控制台）跑脚本。
-
-```bash
-arf --vanilla --no-banner -e '<R 表达式>'
-```
-
-- `--vanilla` 不加载用户配置，`--no-banner` 去掉横幅，`-e` 求值后退出。
-- **stderr 噪音多**：`arf` 把包注册信息、`proj_create` 警告、以及 **xgboost C 层堆栈** 打到 stderr。
-  验证输出时用 `2>/dev/null`，或 `2>&1 | grep -v "Registered\|proj_create\|predict.ranger\|^ *from"`，否则真正的 `cat`/`print` 会被淹没。
-- 包开发循环：`arf --vanilla --no-banner -e 'devtools::document(quiet=TRUE); devtools::load_all(quiet=TRUE); <测试>'`。
-  改 `R/` 里的 `#' @export`/函数后，先 `document()` 再 `load_all()`；删函数记得手动 `rm man/<fn>.Rd`。
-- **避坑**：xgboost 2.x 在 **0 行矩阵** 上 `predict` 会报 `Input pointer misalignment`（看似内存对齐 bug，实为空输入）。
-  调 predict 前用 `if (nrow(Xi) == 0) return(NULL)` 守卫即可，与对齐无关。
 
 ## XGB 后处理模型的函数设计（`R/xgboost.R`, `R/xgboost_validate.R`）
 
