@@ -25,6 +25,6 @@ xgb <- train_xgboost(data_calib)
 fit <- xgb$HydroMetQlagXGB[[1]]
 
 fprintf("[%s | %s] lead 1 HydroMetQlagXGB\n", model, SITE)
-print(fit$gof) # 比较 type=="train" vs "valid" 的 NSE gap
+print(GOF(fit)) # 比较 mode=="train" vs "valid" 的 NSE gap (取 kfold=="ensemble" 行)
 iters <- map_dbl(fit$model, ~ as.integer(xgb.attr(.x, "best_iteration"))) # 每折早停轮数, 应 << 500
 fprintf("best_iteration (5 folds): %s\n", paste(iters, collapse = ", "))

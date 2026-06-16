@@ -5,13 +5,12 @@
 # 检查 ensemble mean 的洪水场次时间序列是否存在锯齿波动
 source("scripts/main_pkgs.R")
 
-# 从 summary$pred 长表取集合预测 (ensemble mean):
-#   - Hydro 基线        : kfold = "-"
-#   - XGB 集合平均(mean): kfold = "mean" (train 在率定期, test 在验证期, 拼成全序列)
-#   - valid 的 OOF (kfold = "all") 此处不取
+# 从 summary$pred 长表取集合预测 (ensemble):
+#   - Hydro 基线   : kfold = "-"
+#   - XGB 集合平均 : kfold = "ensemble" (train 在率定期, test 在验证期, 拼成全序列)
 get_pred_ens <- function(pred, LEAD) {
   methods <- c("Hydro", "HydroMetXGB", "HydroMetQlagXGB")
-  pred[kfold %in% c("-", "mean") & model %in% methods & lead %in% c("-", LEAD),
+  pred[kfold %in% c("-", "ensemble") & model %in% methods & lead %in% c("-", LEAD),
     .(time, model, Q_sim)] %>%
     mutate(model = factor(model, methods))
 }
