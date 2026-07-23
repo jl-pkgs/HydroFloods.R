@@ -7,7 +7,7 @@ model <- "XAJ"
 SITE <- "县河"
 sites <- c(SITE)
 
-root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()
+root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path_mnt()
 dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
 
 f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")

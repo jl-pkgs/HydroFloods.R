@@ -6,7 +6,7 @@ devtools::load_all("/mnt/z/GitHub/cug-hydro/kfold.R")
 source("scripts/main_pkgs.R")
 
 # --- 取单站率定期数据 (同 step2_xgboost.Rmd) ---
-root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path.mnt()
+root <- "/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl" %>% path_mnt()
 dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
 f_forcing <- glue("{root}/apps/data/十堰_Forcing_hourly_ALL_v20260417_basins24.csv")
 forcing <- fread(f_forcing) %>% select(-Q, -R, -Z, -area_km2, -Tair)

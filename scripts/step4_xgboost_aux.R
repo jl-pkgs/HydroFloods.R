@@ -7,7 +7,7 @@ models <- c("m05_ihacres_7p_1s", "m07_gr4j_4p_2s", "m09_susannah1_6p_2s",
   "m28_xinanjiang_12p_4s", "XAJ")
 sites <- c("松柏（二）", "县河", "房县", "延坝", "孤山")
 
-root <- path.mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl")
+root <- path_mnt("/mnt/z/GitHub/jl-pkgs/ModernHydroModels.jl")
 dir_root <- glue("{root}/Project_Shiyan2025/OUTPUT/version3_洪水摘录表_OnlyEvents")
 out_dir <- "./OUTPUT/XGboost_aux"
 f_aux <- "/share/GitHub/CUG-hydro/Shijiaqi/Paper_Figures/DATA/SM_GRACE_monthly_basins_2012_2024.csv"
