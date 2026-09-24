@@ -1,6 +1,6 @@
 #' @keywords internal
 #' @import glue
-#' @importFrom dplyr mutate group_map group_by
+#' @importFrom dplyr mutate group_map group_by select starts_with rename_with all_of
 #' @importFrom purrr map
 #' @importFrom lubridate ymd_hms dhours
 #' @importFrom Ipaper %!in% write_fig

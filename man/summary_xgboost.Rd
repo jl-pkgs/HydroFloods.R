@@ -13,23 +13,20 @@ summary_xgboost(
 \arguments{
 \item{object}{\code{\link[=train_xgboost]{train_xgboost()}} 的返回}
 
-\item{newdata}{验证期数据 (最后两年, 训练时未用); \code{NULL} 则只出 train/valid}
+\item{newdata}{验证期数据 (训练时未用); \code{NULL} 则只出 train/valid}
 
 \item{leads}{预见期, 默认由 \code{object} 推断}
 }
 \value{
-\code{pred} (valid + test 时间序列) / \code{gof} (train/valid/test) /
-\code{info_pass} (洪水合格率) / \code{info_flood} (按 valid/test 分)
+\code{listk(pred, gof, info_pass, info_flood)}:
+\itemize{
+\item \code{pred}: train/valid/test 集合预测长表 (含 Hydro 基线)
+\item \code{gof} : 逐 \verb{(model, lead, mode)} 拟合优度
+\item \code{info_pass} : 逐 \verb{(model, lead, mode)} 洪水合格率
+\item \code{info_flood}: 各情景洪水场次信息 (率定期 train/valid 共用一次划分)
+}
 }
 \description{
-三个概念 (\code{type} 列):
-\itemize{
-\item \strong{train}: 5 个 kfold 各自训练 GOF 的均值 (率定期, 样本内拟合)
-\item \strong{valid}: 拼接的 OOF \code{ypred} 的 GOF (率定期, 交叉验证, 不泄漏)
-\item \strong{test} : 最后两年未见数据 \code{newdata} 上 5 模型集合预测(\code{mean})的 GOF (样本外)
-}
-}
-\details{
-train / valid 恒返回 (从 \code{object} 的 kfold 内部计算, 无需新数据);
-传入 \code{newdata} 时追加 test (集合预测见 \code{\link[=predict_xgboost]{predict_xgboost()}}).
+train / valid 恒返回 (率定期, 由 \code{object} 内部 kfold 计算);
+传入 \code{newdata} 时追加 test (验证期, 样本外集合预测).
 }

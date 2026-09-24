@@ -3,17 +3,18 @@
 # 三种情景 (`mode` 列), 由 kfold 的 `predict.kfold` 提供 train/valid/test 语义:
 #   - train: 各折对已见行的集合预测 (率定期, 样本内拟合)
 #   - valid: 各折对留出行的 OOF 拼接 (率定期, 交叉验证, 不泄漏)
-#   - test : 5 折对全新 newdata 的集合预测 (验证期, 样本外)
+#   - test : 子模型对全新 newdata 的集合预测 (验证期, 样本外)
 # 三者均取集合平均 (`$ensemble`); GOF 直接由 pred 长表逐 (model, lead) 计算.
 
-# 遍历 4 个 XGB 模型族, 对齐 fit 与特征 X, 逐 (fit, Xi, model, lead) 调用 f 并 rbind
+# 遍历 5 个 XGB 模型族, 对齐 fit 与特征 X, 逐 (fit, Xi, model, lead) 调用 f 并 rbind
 xgb_map <- function(object, X, f, leads = seq_along(object$HydroMetQlagXGB)) {
   nms <- names(object$HydroMetQlagXGB)[leads] # 与训练一致的 lead 子集
   rbindlist(c(
     list(f(object$MetXGB, X$MetXGB, "MetXGB", "-")),
     list(f(object$HydroMetXGB, X$HydroMetXGB, "HydroMetXGB", "-")),
     map(nms, \(nm) f(object$QlagXGB[[nm]], X$QlagXGB[[nm]], "QlagXGB", nm)),
-    map(nms, \(nm) f(object$HydroMetQlagXGB[[nm]], X$HydroMetQlagXGB[[nm]], "HydroMetQlagXGB", nm))
+    map(nms, \(nm) f(object$HydroMetQlagXGB[[nm]], X$HydroMetQlagXGB[[nm]], "HydroMetQlagXGB", nm)),
+    map(nms, \(nm) f(object$HydroMetQlagMultiXGB[[nm]], X$HydroMetQlagMultiXGB[[nm]], "HydroMetQlagMultiXGB", nm))
   ), use.names = TRUE, fill = TRUE)
 }
 
@@ -25,7 +26,7 @@ arrange_xgb <- function(d) {
 
 #' 与 train_xgboost 配对的集合预测
 #'
-#' 对每个 (模型族, lead) 用 5 个 kfold 子模型预测, 取集合平均 (`$ensemble`).
+#' 对每个 (模型族, lead) 用子模型预测, 取集合平均 (`$ensemble`).
 #' 特征构造与训练共用 `xgb_features()`, 保证一致.
 #' @param object [train_xgboost()] 的返回
 #' @param newdata 预测数据. `mode = "test"` 用其特征 (样本外);
@@ -37,7 +38,7 @@ arrange_xgb <- function(d) {
 #' @export
 predict_xgboost <- function(object, newdata, leads = seq_along(object$HydroMetQlagXGB),
                             mode = "test") {
-  X <- xgb_features(newdata, leads)
+  X <- xgb_features(newdata, leads, object$multi_back)
   meta <- X$data[, .(site, time, Q_obs)]
   one <- function(fit, Xi, model, lead) {
     if (nrow(Xi) == 0) return(NULL)
@@ -46,6 +47,11 @@ predict_xgboost <- function(object, newdata, leads = seq_along(object$HydroMetQl
     cbind(meta, model, lead, kfold = "ensemble", Q_sim)
   }
   hydro <- X$data[, .(site, time, Q_obs, model = "Hydro", lead = "-", kfold = "-", Q_sim)]
+  if (identical(object$validation, "holdout") && mode != "test") {
+    valid <- object$HydroMetXGB$index[[1]]
+    drop <- if (mode == "train") valid else setdiff(seq_len(nrow(hydro)), valid)
+    hydro[drop, Q_sim := NA_real_]
+  }
   ans <- rbind(hydro, xgb_map(object, X, one, leads), fill = TRUE)
   setcolorder(ans[, mode := mode], "mode")
   ans
@@ -53,6 +59,8 @@ predict_xgboost <- function(object, newdata, leads = seq_along(object$HydroMetQl
 
 # 单情景洪水合格率: pred 与已划分洪水场次 d_flood 对齐, 按 (model, lead, kfold) 算合格率
 flood_pass <- function(pred, d_flood, mode) {
+  pred <- pred[is.finite(Q_sim)]
+  d_flood <- d_flood[time %in% pred$time]
   n_flood <- d_flood$group_name %>% unique_length()
   merge(d_flood, pred, by = "time") %>%
     .[, eval_Qmax(Q_obs, Q_sim), .(model, lead, kfold, group, group_name)] %>%

@@ -16,11 +16,14 @@
 | HydroMetXGB     | `P, PET, Q_sim`           | 气象 + 水文                | 单模型  |
 | QlagXGB         | `Q_t-lead`                | 纯滞后流量                 | 逐 lead |
 | HydroMetQlagXGB | `P, PET, Q_sim, Q_t-lead` | 全特征                     | 逐 lead |
+| HydroMetQlagMultiXGB | `P, PET, Q_sim, Qobs(t-τ:t-τ-3), dQobs, mean3` | 多时刻前期流量 | 逐 lead |
 
-逐 lead 的族用 `add_previous()` 生成的滞后流量 `Q_t-lead`；单模型族 `lead = "-"`。
+逐 lead 的模型族用 `add_previous()` 生成滞后流量；Multi 默认使用论文最终
+`back03` 定义，`multi_back = 3`。单模型族 `lead = "-"`。
 
 ### kfold 集合（kfold 包重构后的新 API）
 - `kfold_xgboost(X, Y, ...)` 返回 `kfold` 对象：`$data`（X, Y）、`$index`（5 折留出索引）、`$model`（5 个子模型 list）。**不再有顶层 `$ypred` / `$gof`**。
+- `train_xgboost(validation = "holdout", train_ratio = 0.7)` 按时间顺序以前 70% 训练、后 30% 验证，并保持相同的 `kfold` 对象结构。
 - `predict.kfold(fit, newdata, mode)`：一次给出 5 折各自预测 + 集合平均 `$ensemble`。`mode` 决定 train/valid/test 语义：
   - `train`：屏蔽各折自己的留出行 → 样本内拟合；`valid`：仅留出行 → OOF（不泄漏）；`test`：用 `newdata` 全量预测（样本外）。
 - `GOF.kfold(fit)` 给 train+valid 拟合优度，`GOF(fit, test = list(X, Y))` 给 test；`kfold` 列含各折 + `ensemble`。
@@ -29,7 +32,7 @@
 - `predict_xgboost(object, newdata, leads, mode)` 输出 **长表** `[mode, site, time, Q_obs, model, lead, kfold, Q_sim]`，含 Hydro 基线（`kfold = "-"`），XGB 各族取集合平均（`kfold = "ensemble"`）。一个函数 + `mode` 覆盖 train/valid/test。
   - `model` 列必须显式带上（QlagXGB 与 HydroMetQlagXGB 共用 `lead`，不能由 `lead` 反推）。
   - train/valid 走 kfold 内部训练集（`newdata` 须传 `object$data_full`），test 用 `newdata` 特征。
-- `xgb_map(object, X, f, leads)`：遍历 4 个模型族对齐 `(fit, 特征)` 的 **唯一骨架**，predict 复用它（替代原来 predict/oof/gof 各写一遍）。
+- `xgb_map(object, X, f, leads)`：遍历 5 个模型族并对齐 `(fit, 特征)`。
 - `summary_xgboost(object, newdata = NULL, leads = seq_along(object$HydroMetQlagXGB))`：
   - train/valid 恒返回（从 `object` 内部算）；传 `newdata` 追加 test。
   - **GOF 直接由 `pred` 长表逐 `(model, lead, mode)` 算**（`pred[!is.na(Q_sim), GOF(Q_obs, Q_sim), .(model, lead, kfold, mode)]`），与 `GOF.kfold` 的 ensemble 行等价，省去 `gather_gof`。

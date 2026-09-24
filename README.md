@@ -36,6 +36,12 @@ xgb_force_calib: false
 xgb_nlead: 24 # 当前只做未来 12 小时
 ```
 
+`HydroMet-QlagMulti` 使用 `P(t) + PET(t) + Q_sim(t)`、从
+`Qobs(t-τ)` 到 `Qobs(t-τ-3)` 的四个前期流量、相邻流量差以及前三项均值。
+它已作为现有 XGBoost 后处理流程中的第 5 个模型族参与训练、检验和预报。
+`train_xgboost()` 默认使用 5 折交叉验证；论文式时间留出可设置
+`validation = "holdout", train_ratio = 0.7`，即前 70% 训练、后 30% 验证。
+
 ## 一建运行
 ```bash
 # Copyright (c) 2026 Dongdong Kong & JiaQi Shi

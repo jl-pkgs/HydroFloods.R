@@ -2,7 +2,8 @@
 #'
 #' @param t0        预报起点，POSIXct 或可被 as.POSIXct 解析的字符串
 #' @param fout_sim  预报阶段，X2对应的全部模拟结果, 必须包含 time, Q_obs, Q_sim, P列
-#' @param fout_xgb  可选，XGBoost后处理的结果文件，必须包含 time, XGB_mean, XGBQlag_mean列
+#' @param fout_xgb  可选，XGBoost后处理的结果文件，包含 time,
+#'   XGB_mean, XGBQlag_mean, XGBQlagMulti_mean
 #' @param window_past 回溯时长（默认7天）
 #' @param window_fc   预报时长（默认1天）
 #' 
@@ -66,7 +67,7 @@ plot_Forecast <- function(
       # labs(color = NULL) +
       new_scale_color() +
       geom_line(data = d_xgb[fold == "mean"], aes(time, value, color = variable)) +
-      scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+      scale_color_manual(values = c("#E69F00", "#56B4E9", "#D62728")) +
       labs(color = NULL)
   }
   p
@@ -85,5 +86,12 @@ tidy_xgb <- function(fout_xgb) {
     melt(c("time"), variable.name = "fold", value.name = "HydroMetQlagXGB") %>%
     mutate(fold = str_extract(fold, "(?<=_).*"))
 
-  merge(HydroMetXGB, HydroMetQlagXGB) %>% melt(c("time", "fold"))
+  HydroMetQlagMultiXGB <- d %>%
+    select(time, starts_with("XGBQlagMulti_")) %>%
+    melt(c("time"), variable.name = "fold", value.name = "HydroMetQlagMultiXGB") %>%
+    mutate(fold = str_extract(fold, "(?<=_).*"))
+
+  merge(HydroMetXGB, HydroMetQlagXGB) %>%
+    merge(HydroMetQlagMultiXGB) %>%
+    melt(c("time", "fold"))
 }
