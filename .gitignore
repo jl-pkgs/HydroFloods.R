@@ -16,3 +16,6 @@ test
 
 # *.sh
 test-xgb
+
+# 本地运行输出
+apps/example_HydroMetQlagMulti/.__smb*

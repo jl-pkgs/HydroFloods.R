@@ -18,15 +18,15 @@ check_input <- function(d) {
 #' force_calib = TRUE 表示用 XAJ calib 文件重新率定；FALSE 表示读取已有 res。
 #' @export
 calib_xgb <- function(f_xgb = NULL, f_calib = NULL, nlead = 12, force_calib = FALSE) {
-  if (!isfile(f_xgb) || force_calib) {
+  xgb <- if (!isfile(f_xgb) || force_calib) NULL else readRDS(f_xgb)
+  if (is.null(xgb) || is.null(xgb$HydroMetQlagMultiXGB)) {
     dat <- fread(f_calib) %>% check_input()
     xgb <- train_xgboost(dat, leads = seq_len(nlead))
     saveRDS(xgb, file = f_xgb)
-  } else {
-    xgb <- readRDS(f_xgb)
   }
   XGBQlag <- lapply(xgb$HydroMetQlagXGB, \(x) x$model)
-  list(XGB = xgb$HydroMetXGB$model, XGBQlag = XGBQlag)
+  XGBQlagMulti <- lapply(xgb$HydroMetQlagMultiXGB, \(x) x$model)
+  list(XGB = xgb$HydroMetXGB$model, XGBQlag = XGBQlag, XGBQlagMulti = XGBQlagMulti)
 }
 
 # forecast 段逐时刻后处理
@@ -39,23 +39,31 @@ predict_xgb <- function(models, df_new) {
 
   df_xbg <- df_new[, .(P, PET, Q_sim)]
   df_xgbQlag <- df_new[, .(P, PET, Q_sim, Qlag)]
+  df_xgbQlagMulti <- df_new[, .(
+    P, PET, Q_sim, Qobs_lag00, Qobs_lag01, Qobs_lag02, Qobs_lag03,
+    dQobs_lag1, Qobs_lag_mean3
+  )]
 
   nfold <- length(models$XGB)
   names_xgb <- sprintf("XGB_k%02d", 1:nfold)
   names_xgbQlag <- sprintf("XGBQlag_k%02d", 1:nfold)
+  names_xgbQlagMulti <- sprintf("XGBQlagMulti_k%02d", 1:nfold)
 
   lapply(seq_len(nrow(df_new)), function(i) {
     d <- df_new[i]
     p1 <- .predict_xgb(models$XGB, df_xbg[i, ])
     p2 <- .predict_xgb(models$XGBQlag[[d$lead]], df_xgbQlag[i, ])
+    p3 <- .predict_xgb(models$XGBQlagMulti[[d$lead]], df_xgbQlagMulti[i, ])
 
     out <- data.table(Hydro = d$Q_sim)
-    c(setNames(p1, names_xgb), setNames(p2, names_xgbQlag)) %>%
+    c(setNames(p1, names_xgb), setNames(p2, names_xgbQlag),
+      setNames(p3, names_xgbQlagMulti)) %>%
       as.list() %>%
       as.data.table() %>%
       mutate(
         XGB_mean = mean(as.numeric(p1)),
-        XGBQlag_mean = mean(as.numeric(p2))
+        XGBQlag_mean = mean(as.numeric(p2)),
+        XGBQlagMulti_mean = mean(as.numeric(p3))
       )
   }) %>%
     rbindlist() %>%
@@ -68,13 +76,20 @@ predict_xgb <- function(models, df_new) {
 build_xgb_Xt0 <- function(d, nlead = 12) {
   d <- check_input(d)
   t0 <- d[period == "analysis", time] %>% max()
-  qobs_t0 <- d[period == "analysis" & time <= t0 & !is.na(Q_obs)][.N, Q_obs]
+  qobs <- d[period == "analysis" & time <= t0 & !is.na(Q_obs), tail(Q_obs, 4)] %>% rev()
+  if (length(qobs) < 4) stop("HydroMet-QlagMulti 至少需要 4 个前期流量观测。")
 
   d[period == "forecast" & time > t0] %>%
     .[1:nlead, .(site, time, P, PET, Q_sim)] %>%
     mutate(
       lead = sprintf("lead_%02d", 1:nlead),
-      Qlag = qobs_t0 # 率定期最后一个观测值作为 Qlag 输入
+      Qlag = qobs[1], # 率定期最后一个观测值作为 Qlag 输入
+      Qobs_lag00 = qobs[1],
+      Qobs_lag01 = qobs[2],
+      Qobs_lag02 = qobs[3],
+      Qobs_lag03 = qobs[4],
+      dQobs_lag1 = qobs[1] - qobs[2],
+      Qobs_lag_mean3 = mean(qobs[1:3])
     )
 }
 

@@ -19,7 +19,8 @@ plot_Forecast(
 
 \item{fout_sim}{预报阶段，X2对应的全部模拟结果, 必须包含 time, Q_obs, Q_sim, P列}
 
-\item{fout_xgb}{可选，XGBoost后处理的结果文件，必须包含 time, XGB_mean, XGBQlag_mean列}
+\item{fout_xgb}{可选，XGBoost后处理的结果文件，必须包含 time,
+XGB_mean, XGBQlag_mean, XGBQlagMulti_mean列}
 
 \item{window_past}{回溯时长（默认7天）}
 

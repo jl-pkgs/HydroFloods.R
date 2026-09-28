@@ -4,20 +4,40 @@
 \alias{train_xgboost}
 \title{训练 XGB 洪水预报后处理模型}
 \usage{
-train_xgboost(data_full, leads = 1:12, ...)
+train_xgboost(
+  data_full,
+  leads = 1:12,
+  multi_back = 3L,
+  validation = c("kfold", "holdout"),
+  train_ratio = 0.7,
+  nrounds = 200,
+  early_stopping_rounds = 30,
+  ...
+)
 }
 \arguments{
 \item{data_full}{训练数据, 含 \verb{site, time, Q_obs, P, Q_sim, PET_Romanenko}}
 
 \item{leads}{预见期 (小时)}
 
-\item{...}{透传给 \code{kfold_xgboost()}}
+\item{multi_back}{HydroMet-QlagMulti 使用的额外前期流量阶数，默认 3}
+
+\item{validation}{验证方式：5 折交叉验证或按时间顺序留出}
+
+\item{train_ratio}{\code{validation = "holdout"} 时的训练比例，默认 0.7}
+
+\item{nrounds}{最大迭代次数}
+
+\item{early_stopping_rounds}{7:3 验证时的提前停止轮数}
+
+\item{...}{透传给 \code{kfold_xgboost()} 或 XGBoost 留出训练}
 }
 \value{
-list: \code{data_full}, \code{data} (有效观测行), 及各模型族的 kfold 拟合结果
+list: \code{data_full}, \code{data} (有效观测行), 及各模型族的 kfold 对象
 }
 \description{
-对 5 个模型族 (MetXGB / QlagXGB / HydroMetXGB / HydroMetQlagXGB) 分别做
-kfold 训练. 特征由 \code{xgb_features()} 构造. 配套预测见 \code{\link[=predict_xgboost]{predict_xgboost()}},
-表现检验见 \code{\link[=summary_xgboost]{summary_xgboost()}}.
+对 5 个模型族 (MetXGB / HydroMetXGB / QlagXGB / HydroMetQlagXGB /
+HydroMetQlagMultiXGB) 分别训练, 特征由 \code{xgb_features()} 构造.
+配套预测见 \code{\link[=predict_xgboost]{predict_xgboost()}}, 表现检验见
+\code{\link[=summary_xgboost]{summary_xgboost()}}. HydroMetQlagMultiXGB 使用论文最终的 back03 方案。
 }
