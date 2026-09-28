@@ -1,0 +1,27 @@
+## HydroMet-QlagMulti 运行案例
+app: /home/kong/ModernHydro/bin/ModernHydro # Julia ModernHydroModels 路径
+
+# ── 数据路径 ─────────────────────────────────────────────────────────
+forcing_calib    : "apps/X1_孤山.csv"
+forcing_forecast : "apps/X2_孤山.csv"
+
+# ── 站点 / 模型 ──────────────────────────────────────────────────────
+model    : "XAJ"
+site     : "孤山"
+dir_root : "apps/example_HydroMetQlagMulti"
+
+# ── 率定设置 ─────────────────────────────────────────────────────────
+force_calib : false
+maxn        : 3
+n_warm      : 90
+
+# ── 预报设置 ─────────────────────────────────────────────────────────
+t0    : "2023-10-01 00:00:00"
+n_fc  : 24
+ratio : 0.0
+
+# ── XGBoost 后处理设置 ───────────────────────────────────────────────
+# HydroMet-QlagMulti 会自动作为第 5 个模型族参与训练和预报。
+xgb_run         : true
+xgb_force_calib : false
+xgb_nlead       : 6
