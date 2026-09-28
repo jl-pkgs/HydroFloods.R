@@ -24,4 +24,4 @@ ratio : 0.0
 # HydroMet-QlagMulti 会自动作为第 5 个模型族参与训练和预报。
 xgb_run         : true
 xgb_force_calib : false
-xgb_nlead       : 6
+xgb_nlead       : 24
