@@ -55,6 +55,7 @@ predict_xgb <- function(models, df_new) {
     p2 <- .predict_xgb(models$XGBQlag[[d$lead]], df_xgbQlag[i, ])
     p3 <- .predict_xgb(models$XGBQlagMulti[[d$lead]], df_xgbQlagMulti[i, ])
 
+    out <- data.table(Hydro = d$Q_sim)
     c(setNames(p1, names_xgb), setNames(p2, names_xgbQlag),
       setNames(p3, names_xgbQlagMulti)) %>%
       as.list() %>%
@@ -82,7 +83,7 @@ build_xgb_Xt0 <- function(d, nlead = 12) {
     .[1:nlead, .(site, time, P, PET, Q_sim)] %>%
     mutate(
       lead = sprintf("lead_%02d", 1:nlead),
-      Qlag = qobs[1],
+      Qlag = qobs[1], # 率定期最后一个观测值作为 Qlag 输入
       Qobs_lag00 = qobs[1],
       Qobs_lag01 = qobs[2],
       Qobs_lag02 = qobs[3],

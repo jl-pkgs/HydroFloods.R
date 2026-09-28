@@ -3,7 +3,7 @@
 # 三种情景 (`mode` 列), 由 kfold 的 `predict.kfold` 提供 train/valid/test 语义:
 #   - train: 各折对已见行的集合预测 (率定期, 样本内拟合)
 #   - valid: 各折对留出行的 OOF 拼接 (率定期, 交叉验证, 不泄漏)
-#   - test : 子模型对全新 newdata 的集合预测 (验证期, 样本外)
+#   - test : 5 折对全新 newdata 的集合预测 (验证期, 样本外; holdout 时为 1 个子模型)
 # 三者均取集合平均 (`$ensemble`); GOF 直接由 pred 长表逐 (model, lead) 计算.
 
 # 遍历 5 个 XGB 模型族, 对齐 fit 与特征 X, 逐 (fit, Xi, model, lead) 调用 f 并 rbind
@@ -26,7 +26,8 @@ arrange_xgb <- function(d) {
 
 #' 与 train_xgboost 配对的集合预测
 #'
-#' 对每个 (模型族, lead) 用子模型预测, 取集合平均 (`$ensemble`).
+#' 对每个 (模型族, lead) 用 5 个 kfold 子模型预测, 取集合平均 (`$ensemble`);
+#' holdout 验证时使用 1 个子模型.
 #' 特征构造与训练共用 `xgb_features()`, 保证一致.
 #' @param object [train_xgboost()] 的返回
 #' @param newdata 预测数据. `mode = "test"` 用其特征 (样本外);

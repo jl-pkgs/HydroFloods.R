@@ -2,8 +2,8 @@
 #'
 #' @param t0        预报起点，POSIXct 或可被 as.POSIXct 解析的字符串
 #' @param fout_sim  预报阶段，X2对应的全部模拟结果, 必须包含 time, Q_obs, Q_sim, P列
-#' @param fout_xgb  可选，XGBoost后处理的结果文件，包含 time,
-#'   XGB_mean, XGBQlag_mean, XGBQlagMulti_mean
+#' @param fout_xgb  可选，XGBoost后处理的结果文件，必须包含 time,
+#'   XGB_mean, XGBQlag_mean, XGBQlagMulti_mean列
 #' @param window_past 回溯时长（默认7天）
 #' @param window_fc   预报时长（默认1天）
 #' 

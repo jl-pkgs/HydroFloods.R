@@ -30,13 +30,14 @@ train_xgboost(
 
 \item{early_stopping_rounds}{7:3 验证时的提前停止轮数}
 
-\item{...}{传给 XGBoost}
+\item{...}{透传给 \code{kfold_xgboost()} 或 XGBoost 留出训练}
 }
 \value{
-list: \code{data_full}, \code{data} 及各模型族的 kfold 对象
+list: \code{data_full}, \code{data} (有效观测行), 及各模型族的 kfold 对象
 }
 \description{
-对 5 个模型族分别训练；HydroMetQlagMultiXGB 为论文最终的
-back03 方案。
+对 5 个模型族 (MetXGB / HydroMetXGB / QlagXGB / HydroMetQlagXGB /
+HydroMetQlagMultiXGB) 分别训练, 特征由 \code{xgb_features()} 构造.
+配套预测见 \code{\link[=predict_xgboost]{predict_xgboost()}}, 表现检验见
+\code{\link[=summary_xgboost]{summary_xgboost()}}. HydroMetQlagMultiXGB 使用论文最终的 back03 方案。
 }
-% End of generated documentation.
